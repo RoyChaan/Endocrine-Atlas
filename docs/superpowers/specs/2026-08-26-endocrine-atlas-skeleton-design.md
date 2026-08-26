@@ -306,7 +306,7 @@ App.tsx
 - `centroid` 单点返回自身；两点返回中点
 - `interpolatePose(a, b, 0)` 深等于 `a`；`t=1` 深等于 `b`
 - `t` 越界钳制（`-1 → a`，`2 → b`）
-- 沿 t 递增，到 target 的距离单调不增
+- 沿 t 递增，到**目标机位** `to.position` 的距离单调不增（注意断言对象是 `to.position` 而非 `to.target`：插值路径是直线，到线段终点的距离必然单调，但到线外一点的距离是 t 的抛物线，可能先减后增）
 - **防贴脸回归**：对全部 7 个腺体，`|computeTargetPose(g, θ).position − centroid(g.positions)| >= MIN_FOCUS_DISTANCE`
 - `computeTargetPose` 的 `target` 等于质心
 - 传入不同 `azimuth` 产生不同 `position`，但 `target` 不变
