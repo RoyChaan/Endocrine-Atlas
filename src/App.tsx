@@ -1,5 +1,9 @@
 import { useState } from 'react'
 import { AnatomyScene } from './scene/AnatomyScene'
+import { ControlsHint } from './ui/ControlsHint'
+import { Header } from './ui/Header'
+import { KnowledgeCard } from './ui/KnowledgeCard'
+import { ResetButton } from './ui/ResetButton'
 import type { GlandId } from './types/gland'
 
 export function App() {
@@ -7,13 +11,20 @@ export function App() {
 
   return (
     <div className="app">
-      <header className="app__header">
-        <h1>ENDOCRINE ATLAS</h1>
-        <span className="app__subtitle">内分泌系统</span>
-      </header>
+      <Header actions={<ResetButton onReset={() => setSelectedId(null)} />} />
+
       <main className="app__body">
-        <AnatomyScene selectedId={selectedId} onSelect={setSelectedId} />
+        <div className="app__viewer">
+          <AnatomyScene selectedId={selectedId} onSelect={setSelectedId} />
+        </div>
+        <div className="app__panel">
+          <KnowledgeCard selectedId={selectedId} onClose={() => setSelectedId(null)} />
+        </div>
       </main>
+
+      <footer className="app__footer">
+        <ControlsHint />
+      </footer>
     </div>
   )
 }
