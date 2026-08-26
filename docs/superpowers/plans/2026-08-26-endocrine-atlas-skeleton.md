@@ -1332,6 +1332,15 @@ Expected: PASS。
 - 若 `tsc` 报 `Property 'mesh' does not exist on type 'JSX.IntrinsicElements'`：在 `src/types/` 下新建 `three-jsx.d.ts`，内容为 `import type {} from '@react-three/fiber'`，把 R3F 的 JSX 声明拉进来。
 - 若 `fireEvent` 报 `stopPropagation is not a function`：确认第三个参数按上面写法传了 `{ stopPropagation: () => {} }`。
 - 若 `node.instance.material` 为 `undefined`：说明 `findAll` 抓到的是非 Mesh 节点，改用 `renderer.scene.findAll((n) => n.type === 'Mesh' && n.props.name === ...)`。
+- **`tsc` 必然会报** `TS2339: Property 'material' does not exist on type 'Object3D'` —— test-renderer 把 `instance` 静态类型标为 `Object3D`。在测试文件顶部加一个收窄辅助函数，所有 material 断言都走它：
+
+```ts
+import type { Mesh, MeshStandardMaterial } from 'three'
+
+function materialOf(node: { instance: object }): MeshStandardMaterial {
+  return (node.instance as Mesh).material as MeshStandardMaterial
+}
+```
 
 - [ ] **Step 6: 跑完整 verify**
 
