@@ -144,11 +144,14 @@ npm install -D @react-three/test-renderer@^8 @types/react@^18 @types/react-dom@^
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "noEmit": true,
-    "types": ["vitest/globals", "@testing-library/jest-dom"]
+    "types": ["vite/client", "vitest/globals", "@testing-library/jest-dom"]
   },
   "include": ["src", "tests", "vite.config.ts"]
 }
 ```
+
+`vite/client` 不可省略 —— 没有它，`main.tsx` 里的 `import './index.css'` 会报
+`TS2882: Cannot find module or type declarations for side-effect import`。
 
 - [ ] **Step 6: 创建 `vite.config.ts`**
 
