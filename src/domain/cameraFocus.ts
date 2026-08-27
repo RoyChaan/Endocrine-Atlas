@@ -57,6 +57,20 @@ export function computeTargetPose(gland: Gland, azimuth: number): CameraPose {
   }
 }
 
+/**
+ * 主相机对"当前选中项"的响应。
+ *
+ * 只有嵌在人体内的腺体（display === 'body'）才值得聚焦。选中独立小窗中的
+ * 腺体时，人体内没有对应的 marker —— 若仍按 positions 飞过去，相机会停在
+ * 一个空位置，误导性比不动更强。因此回到概览，由小窗自己承担视觉强调。
+ */
+export function poseForSelection(gland: Gland | null, azimuth: number): CameraPose {
+  if (gland === null || gland.display !== 'body') {
+    return OVERVIEW_POSE
+  }
+  return computeTargetPose(gland, azimuth)
+}
+
 /** 形式为 (1-t)*a + t*b，保证 t=0 精确返回 a、t=1 精确返回 b。 */
 function lerp3(a: Vec3, b: Vec3, t: number): Vec3 {
   return [

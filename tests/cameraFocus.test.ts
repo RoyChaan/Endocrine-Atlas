@@ -6,8 +6,9 @@ import {
   computeTargetPose,
   easeInOutCubic,
   interpolatePose,
+  poseForSelection,
 } from '../src/domain/cameraFocus'
-import { allGlands, glandById } from '../src/domain/glandRegistry'
+import { allGlands, bodyGlands, glandById, insetGlands } from '../src/domain/glandRegistry'
 import { MIN_FOCUS_DISTANCE } from '../src/domain/constants'
 import type { CameraPose, Vec3 } from '../src/types/gland'
 
@@ -150,6 +151,31 @@ describe('azimuthFrom', () => {
 
   it('正右方（+X）为 π/2', () => {
     expect(azimuthFrom([1, 1, 0], [0, 1, 0])).toBeCloseTo(Math.PI / 2, 10)
+  })
+})
+
+describe('poseForSelection', () => {
+  it('未选中任何腺体时回到概览', () => {
+    expect(poseForSelection(null, 0)).toEqual(OVERVIEW_POSE)
+    expect(poseForSelection(null, 1.7)).toEqual(OVERVIEW_POSE)
+  })
+
+  it('选中人体内的腺体时聚焦到它', () => {
+    for (const gland of bodyGlands()) {
+      expect(poseForSelection(gland, 0.4)).toEqual(computeTargetPose(gland, 0.4))
+    }
+  })
+
+  it('选中独立小窗中的腺体时，主相机回到概览而不是飞向体内的空位置', () => {
+    for (const gland of insetGlands()) {
+      expect(poseForSelection(gland, 0.4)).toEqual(OVERVIEW_POSE)
+    }
+  })
+
+  it('睾丸的 positions 仍在数据中，但主相机不会飞过去', () => {
+    const testis = glandById('testis')
+    expect(testis.positions.length).toBe(2)
+    expect(poseForSelection(testis, 0)).not.toEqual(computeTargetPose(testis, 0))
   })
 })
 

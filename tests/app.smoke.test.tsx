@@ -1,12 +1,26 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
-import { allGlands } from '../src/domain/glandRegistry'
+import { allGlands, insetGlands } from '../src/domain/glandRegistry'
 import type { GlandId } from '../src/types/gland'
 
+// InsetScene 内含 <Canvas>，jsdom 无 WebGL。桩掉它，保留 GlandInset 的
+// DOM 外壳（按钮、标签、aria-pressed）作为真实被测对象。
+vi.mock('../src/scene/InsetScene', () => ({
+  InsetScene: () => <div data-testid="inset-scene-stub" />,
+}))
+
 vi.mock('../src/scene/AnatomyScene', () => ({
-  AnatomyScene: ({ onSelect }: { onSelect: (id: GlandId | null) => void }) => (
+  AnatomyScene: ({
+    onSelect,
+    resetToken,
+  }: {
+    onSelect: (id: GlandId | null) => void
+    resetToken: number
+  }) => (
     <div data-testid="scene-stub">
+      {/* 把 resetToken 暴露到 DOM，这样"复位是否被触发"在 jsdom 里可断言 */}
+      <span data-testid="reset-token">{resetToken}</span>
       {allGlands().map((gland) => (
         <button key={gland.id} type="button" onClick={() => onSelect(gland.id)}>
           {`select-${gland.id}`}
@@ -84,6 +98,111 @@ describe('App 端到端冒烟', () => {
     await user.click(screen.getByRole('button', { name: '关闭' }))
 
     expect(screen.queryByRole('complementary')).not.toBeInTheDocument()
+  })
+
+  it('睾丸的独立小窗渲染出来，标注中英文名', () => {
+    render(<App />)
+    const [testis] = insetGlands()
+    const inset = screen.getByRole('button', { name: new RegExp(testis.chineseName) })
+    expect(inset).toHaveTextContent(testis.chineseName)
+    expect(inset).toHaveTextContent(testis.name)
+    expect(inset).toHaveAttribute('aria-pressed', 'false')
+  })
+
+  it('点击独立小窗选中睾丸并弹出知识卡', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    const [testis] = insetGlands()
+
+    await user.click(screen.getByRole('button', { name: new RegExp(testis.chineseName) }))
+
+    const card = screen.getByRole('complementary')
+    expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent(testis.chineseName)
+    expect(card).toHaveTextContent(testis.location)
+    for (const fn of testis.functions) {
+      expect(card).toHaveTextContent(fn)
+    }
+  })
+
+  it('选中后小窗进入按下态，重置后恢复', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    const [testis] = insetGlands()
+    const nameMatcher = new RegExp(testis.chineseName)
+
+    await user.click(screen.getByRole('button', { name: nameMatcher }))
+    expect(screen.getByRole('button', { name: nameMatcher })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+
+    await user.click(screen.getByRole('button', { name: '重新查看全部' }))
+    expect(screen.getByRole('button', { name: nameMatcher })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    )
+  })
+
+  it('选中人体内的腺体时，小窗不进入按下态', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    const [testis] = insetGlands()
+
+    await user.click(screen.getByRole('button', { name: 'select-thyroid' }))
+
+    expect(
+      screen.getByRole('button', { name: new RegExp(testis.chineseName) }),
+    ).toHaveAttribute('aria-pressed', 'false')
+  })
+
+  it('概览态下点重置仍会触发复位（相机被转动过但没选中任何腺体的情形）', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    // 从未选中任何腺体 —— 旧实现在这里什么都不会发生，因为它依赖
+    // selectedId 的变化来驱动相机，而 selectedId 一直是 null。
+    expect(screen.getByTestId('reset-token')).toHaveTextContent('0')
+
+    await user.click(screen.getByRole('button', { name: '重新查看全部' }))
+    expect(screen.getByTestId('reset-token')).toHaveTextContent('1')
+
+    await user.click(screen.getByRole('button', { name: '重新查看全部' }))
+    expect(screen.getByTestId('reset-token')).toHaveTextContent('2')
+  })
+
+  it('重置同时取消选中并触发复位', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'select-adrenal' }))
+    expect(screen.getByRole('complementary')).toBeInTheDocument()
+    expect(screen.getByTestId('reset-token')).toHaveTextContent('0')
+
+    await user.click(screen.getByRole('button', { name: '重新查看全部' }))
+    expect(screen.queryByRole('complementary')).not.toBeInTheDocument()
+    expect(screen.getByTestId('reset-token')).toHaveTextContent('1')
+  })
+
+  it('普通选中不会触发复位', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'select-thyroid' }))
+    await user.click(screen.getByRole('button', { name: 'select-ovary' }))
+    await user.click(screen.getByRole('button', { name: 'select-none' }))
+
+    expect(screen.getByTestId('reset-token')).toHaveTextContent('0')
+  })
+
+  it('卡片上的关闭按钮只取消选中，不复位相机', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'select-pancreas' }))
+    await user.click(screen.getByRole('button', { name: '关闭' }))
+
+    expect(screen.queryByRole('complementary')).not.toBeInTheDocument()
+    expect(screen.getByTestId('reset-token')).toHaveTextContent('0')
   })
 
   it('场景传回 null 时取消选中', async () => {

@@ -74,6 +74,32 @@ jsdom 没有 WebGL，所以按 "需要多少 3D" 分层：
 甲状腺移出人体、破坏成对器官对称、让 `functions` 超出 3 条上限、把
 肾上腺降到胰腺之下 —— 每一项都被对应的断言抓到。
 
+## 独立小窗
+
+`Gland.display` 决定腺体展示在哪里：
+
+- `'body'` —— 作为 marker 嵌在半透明人体内，由 `scene/GlandLayer` 渲染
+- `'inset'` —— 单独渲染在 3D 区右下角的小窗中，由 `ui/GlandInset` 渲染
+
+睾丸是 `'inset'`：参考图里它也画在独立小框中，因为主人体轮廓无法同时
+承载卵巢与睾丸。两个渲染组件都不认识"睾丸"这个概念，只认 `display`。
+
+选中 `'inset'` 腺体时，主相机回到概览而不是飞向体内的坐标 —— 那里没有
+marker，飞过去比不动更误导。这条决策在 `domain/cameraFocus.ts` 的
+`poseForSelection` 中，有单测覆盖。
+
+## 两个 WebGL 层面的坑
+
+**OrbitControls 的阻尼残留。** 拖动结束后 `enableDamping` 会在内部留下
+一份 `sphericalDelta`。`CameraRig` 每帧写好机位后调用 `controls.update()`，
+这份残留角速度会被重新叠加回去 —— 表现为"点了重置只转回去一半"。
+`CameraRig` 在每次起动画前临时关掉阻尼跑一次 `update()` 把它排空
+（非阻尼分支会应用一次后将 delta 归零）。
+
+**后台标签页不渲染。** R3F 靠 `requestAnimationFrame` 驱动，隐藏的标签页
+里 rAF 不触发，canvas 会停在 HTML 默认的 300×150 且一片空白。调试时若
+整个 3D 区是黑的，先确认 `document.visibilityState === 'visible'` 再怀疑代码。
+
 ## 如何替换腺体造型
 
 当前 7 个腺体共用一个发光小球占位。要换成真实造型：

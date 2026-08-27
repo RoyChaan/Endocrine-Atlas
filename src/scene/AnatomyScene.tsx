@@ -12,9 +12,11 @@ interface AnatomySceneProps {
   selectedId: GlandId | null
   /** 传 null 表示取消选中（点击空白处）。 */
   onSelect: (id: GlandId | null) => void
+  /** 每次递增都无条件把相机复位到概览，与 selectedId 是否变化无关。 */
+  resetToken: number
 }
 
-export function AnatomyScene({ selectedId, onSelect }: AnatomySceneProps) {
+export function AnatomyScene({ selectedId, onSelect, resetToken }: AnatomySceneProps) {
   const controlsRef = useRef<OrbitControlsImpl>(null)
 
   return (
@@ -52,7 +54,7 @@ export function AnatomyScene({ selectedId, onSelect }: AnatomySceneProps) {
         dampingFactor={0.08}
       />
 
-      <CameraRig selectedId={selectedId} controlsRef={controlsRef} />
+      <CameraRig selectedId={selectedId} controlsRef={controlsRef} resetToken={resetToken} />
     </Canvas>
   )
 }
