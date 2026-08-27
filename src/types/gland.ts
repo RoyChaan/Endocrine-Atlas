@@ -9,6 +9,16 @@ export type GlandId =
   | 'ovary'
   | 'testis'
 
+/**
+ * 腺体在哪里展示。
+ * - `body`  ：作为 marker 嵌在半透明人体内
+ * - `inset` ：单独渲染在 3D 区右下角的独立小窗中
+ *
+ * 睾丸用 `inset`：参考图里它也是画在独立小框中的，因为主人体轮廓
+ * 无法同时承载卵巢与睾丸。这是数据属性而非组件里的 id 特判分支。
+ */
+export type GlandDisplay = 'body' | 'inset'
+
 export interface Gland {
   readonly id: GlandId
   /** 英文名，知识卡的次级标签。 */
@@ -21,6 +31,8 @@ export interface Gland {
    * 这样一条知识条目就能对应多个 marker，无需重复的知识条目（Design.md §19）。
    */
   readonly positions: readonly Vec3[]
+  /** 展示在人体内还是独立小窗中。 */
+  readonly display: GlandDisplay
   /** 一句话位置描述。 */
   readonly location: string
   readonly hormones: readonly string[]

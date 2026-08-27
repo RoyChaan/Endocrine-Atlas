@@ -2,9 +2,10 @@ import ReactThreeTestRenderer from '@react-three/test-renderer'
 import { describe, expect, it, vi } from 'vitest'
 import type { Mesh, MeshStandardMaterial } from 'three'
 import { GlandLayer } from '../src/scene/GlandLayer'
-import { allGlands } from '../src/domain/glandRegistry'
+import { bodyGlands } from '../src/domain/glandRegistry'
 
-const TOTAL_MARKERS = allGlands().reduce((n, g) => n + g.positions.length, 0)
+/** 人体层只渲染 display === 'body' 的腺体；睾丸在独立小窗中，不在此列。 */
+const TOTAL_MARKERS = bodyGlands().reduce((n, g) => n + g.positions.length, 0)
 
 function markerName(id: string): string {
   return `gland-marker-${id}`
@@ -19,20 +20,30 @@ function materialOf(node: { instance: object }): MeshStandardMaterial {
 }
 
 describe('GlandLayer 场景图', () => {
-  it('marker 总数等于所有 positions 之和（成对器官展开为 2 个）', async () => {
+  it('marker 总数等于人体层腺体 positions 之和（成对器官展开为 2 个）', async () => {
     const renderer = await ReactThreeTestRenderer.create(
       <GlandLayer selectedId={null} onSelect={() => {}} />,
     )
     const meshes = renderer.scene.findAll((node) => node.type === 'Mesh')
-    expect(TOTAL_MARKERS).toBe(10)
+    // 下丘脑1 + 垂体1 + 甲状腺1 + 肾上腺2 + 胰腺1 + 卵巢2 = 8（睾丸在独立小窗）
+    expect(TOTAL_MARKERS).toBe(8)
     expect(meshes).toHaveLength(TOTAL_MARKERS)
   })
 
-  it('覆盖全部 7 个腺体 id', async () => {
+  it('不渲染睾丸 —— 它在独立小窗中', async () => {
     const renderer = await ReactThreeTestRenderer.create(
       <GlandLayer selectedId={null} onSelect={() => {}} />,
     )
-    for (const gland of allGlands()) {
+    expect(
+      renderer.scene.findAll((node) => node.props.name === markerName('testis')),
+    ).toHaveLength(0)
+  })
+
+  it('覆盖全部人体层腺体 id', async () => {
+    const renderer = await ReactThreeTestRenderer.create(
+      <GlandLayer selectedId={null} onSelect={() => {}} />,
+    )
+    for (const gland of bodyGlands()) {
       const found = renderer.scene.findAll((node) => node.props.name === markerName(gland.id))
       expect(found).toHaveLength(gland.positions.length)
     }
@@ -104,7 +115,7 @@ describe('GlandLayer 场景图', () => {
     const renderer = await ReactThreeTestRenderer.create(
       <GlandLayer selectedId={null} onSelect={() => {}} />,
     )
-    for (const gland of allGlands()) {
+    for (const gland of bodyGlands()) {
       const markers = renderer.scene.findAll((node) => node.props.name === markerName(gland.id))
       const rendered = markers
         .map((m) => [m.instance.position.x, m.instance.position.y, m.instance.position.z])

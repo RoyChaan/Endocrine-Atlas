@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { GLANDS } from '../src/data/glands'
-import { allGlands, findGland, glandById } from '../src/domain/glandRegistry'
+import { allGlands, bodyGlands, findGland, glandById, insetGlands } from '../src/domain/glandRegistry'
 import { BODY_BOUNDS, MAX_FUNCTIONS } from '../src/domain/constants'
 import type { GlandId } from '../src/types/gland'
 
@@ -91,6 +91,30 @@ describe('腺体数据完整性', () => {
     expect(glandById('hypothalamus').positions[0][1]).toBeGreaterThan(
       glandById('pituitary').positions[0][1],
     )
+  })
+})
+
+describe('腺体的展示位置', () => {
+  it.each(GLANDS.map((g) => [g.id, g] as const))('%s 声明了 display', (_id, gland) => {
+    expect(['body', 'inset']).toContain(gland.display)
+  })
+
+  it('恰好一个腺体展示在独立小窗中，且是睾丸', () => {
+    expect(GLANDS.filter((g) => g.display === 'inset').map((g) => g.id)).toEqual(['testis'])
+  })
+
+  it('bodyGlands 与 insetGlands 恰好划分全部腺体，无遗漏无重叠', () => {
+    const body = bodyGlands().map((g) => g.id)
+    const inset = insetGlands().map((g) => g.id)
+
+    expect(body).not.toHaveLength(0)
+    expect(inset).not.toHaveLength(0)
+    expect(new Set([...body, ...inset]).size).toBe(GLANDS.length)
+    expect([...body, ...inset].sort()).toEqual(GLANDS.map((g) => g.id).sort())
+  })
+
+  it('睾丸不在人体层中（已移到独立小窗）', () => {
+    expect(bodyGlands().map((g) => g.id)).not.toContain('testis')
   })
 })
 

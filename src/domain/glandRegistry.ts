@@ -8,6 +8,16 @@ export function allGlands(): readonly Gland[] {
   return GLANDS
 }
 
+/** 嵌在半透明人体内的腺体。GlandLayer 只渲染这些。 */
+export function bodyGlands(): readonly Gland[] {
+  return GLANDS.filter((g) => g.display === 'body')
+}
+
+/** 渲染在独立小窗中的腺体（当前只有睾丸）。 */
+export function insetGlands(): readonly Gland[] {
+  return GLANDS.filter((g) => g.display === 'inset')
+}
+
 /** 按 id 取腺体。id 不存在时抛错 —— 这是编程错误，不是用户输入错误。 */
 export function glandById(id: GlandId): Gland {
   const gland = BY_ID.get(id)
