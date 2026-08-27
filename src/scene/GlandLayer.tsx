@@ -1,4 +1,4 @@
-import { bodyGlands } from '../domain/glandRegistry'
+import { allGlands } from '../domain/glandRegistry'
 import type { GlandId } from '../types/gland'
 import { GlandMarker } from './GlandMarker'
 
@@ -12,15 +12,15 @@ interface GlandLayerProps {
  * 两个 marker，但它们共享同一个 gland.id —— 一条知识条目对应多个
  * marker，无需重复条目（Design.md §19）。
  *
- * 只渲染 display === 'body' 的腺体。睾丸（display === 'inset'）由
- * ui/GlandInset 在右下角独立小窗中渲染。
+ * 渲染全部 7 个腺体，睾丸也在内 —— ui/GlandInset 的小窗是附加的细节
+ * 视图，不把腺体从人体里拿走，否则主相机聚焦过去就是一片空的。
  */
 export function GlandLayer({ selectedId, onSelect }: GlandLayerProps) {
   const hasSelection = selectedId !== null
 
   return (
     <group name="gland-layer">
-      {bodyGlands().flatMap((gland) =>
+      {allGlands().flatMap((gland) =>
         gland.positions.map((position, index) => (
           <GlandMarker
             key={`${gland.id}-${index}`}

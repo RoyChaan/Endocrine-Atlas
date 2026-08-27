@@ -76,17 +76,17 @@ jsdom 没有 WebGL，所以按 "需要多少 3D" 分层：
 
 ## 独立小窗
 
-`Gland.display` 决定腺体展示在哪里：
+`Gland.hasInset` 决定某个腺体是否**额外**在 3D 区右下角给一个小窗。
 
-- `'body'` —— 作为 marker 嵌在半透明人体内，由 `scene/GlandLayer` 渲染
-- `'inset'` —— 单独渲染在 3D 区右下角的小窗中，由 `ui/GlandInset` 渲染
+这是附加的细节视图，**不把腺体从人体里拿走** —— 全部 7 个腺体都嵌在
+人体内，`scene/GlandLayer` 一个不落地渲染。睾丸开这个标志，是因为它在
+半透明 mannequin 的盆腔下方不易看清（参考图也为它单开了一个小框）。
 
-睾丸是 `'inset'`：参考图里它也画在独立小框中，因为主人体轮廓无法同时
-承载卵巢与睾丸。两个渲染组件都不认识"睾丸"这个概念，只认 `display`。
+因此 `insetGlands()` 是 `allGlands()` 的**子集**，不是另一半。
 
-选中 `'inset'` 腺体时，主相机回到概览而不是飞向体内的坐标 —— 那里没有
-marker，飞过去比不动更误导。这条决策在 `domain/cameraFocus.ts` 的
-`poseForSelection` 中，有单测覆盖。
+两个入口完全等效：点小窗和点体内的 marker 都把 `selectedGlandId` 设为
+`testis`，主相机同样居中放大聚焦过去，小窗同步进入高亮态。带小窗的腺体
+在 `domain/cameraFocus.ts` 的 `poseForSelection` 里不享受任何特殊分支。
 
 ## 两个 WebGL 层面的坑
 

@@ -58,14 +58,13 @@ export function computeTargetPose(gland: Gland, azimuth: number): CameraPose {
 }
 
 /**
- * 主相机对"当前选中项"的响应。
+ * 主相机对"当前选中项"的响应：没有选中项就回概览，否则聚焦过去。
  *
- * 只有嵌在人体内的腺体（display === 'body'）才值得聚焦。选中独立小窗中的
- * 腺体时，人体内没有对应的 marker —— 若仍按 positions 飞过去，相机会停在
- * 一个空位置，误导性比不动更强。因此回到概览，由小窗自己承担视觉强调。
+ * 全部腺体一视同仁 —— 带独立小窗的腺体（睾丸）同样嵌在人体内，
+ * 点小窗和点体内 marker 的效果完全一致：主画面居中放大到它。
  */
 export function poseForSelection(gland: Gland | null, azimuth: number): CameraPose {
-  if (gland === null || gland.display !== 'body') {
+  if (gland === null) {
     return OVERVIEW_POSE
   }
   return computeTargetPose(gland, azimuth)

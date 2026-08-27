@@ -8,7 +8,7 @@ import {
   interpolatePose,
   poseForSelection,
 } from '../src/domain/cameraFocus'
-import { allGlands, bodyGlands, glandById, insetGlands } from '../src/domain/glandRegistry'
+import { allGlands, glandById, insetGlands } from '../src/domain/glandRegistry'
 import { MIN_FOCUS_DISTANCE } from '../src/domain/constants'
 import type { CameraPose, Vec3 } from '../src/types/gland'
 
@@ -160,22 +160,25 @@ describe('poseForSelection', () => {
     expect(poseForSelection(null, 1.7)).toEqual(OVERVIEW_POSE)
   })
 
-  it('选中人体内的腺体时聚焦到它', () => {
-    for (const gland of bodyGlands()) {
+  it('选中任何腺体都聚焦到它 —— 包括带小窗的', () => {
+    for (const gland of allGlands()) {
       expect(poseForSelection(gland, 0.4)).toEqual(computeTargetPose(gland, 0.4))
     }
   })
 
-  it('选中独立小窗中的腺体时，主相机回到概览而不是飞向体内的空位置', () => {
+  it('带小窗的腺体不享受特殊待遇：主相机同样居中放大', () => {
     for (const gland of insetGlands()) {
-      expect(poseForSelection(gland, 0.4)).toEqual(OVERVIEW_POSE)
+      const pose = poseForSelection(gland, 0.4)
+      expect(pose).not.toEqual(OVERVIEW_POSE)
+      expect(pose.target).toEqual(centroid(gland.positions))
     }
   })
 
-  it('睾丸的 positions 仍在数据中，但主相机不会飞过去', () => {
+  it('睾丸被聚焦时，相机对准两侧睾丸的质心', () => {
     const testis = glandById('testis')
-    expect(testis.positions.length).toBe(2)
-    expect(poseForSelection(testis, 0)).not.toEqual(computeTargetPose(testis, 0))
+    const pose = poseForSelection(testis, 0)
+    expect(pose.target).toEqual(centroid(testis.positions))
+    expect(pose.target[0]).toBeCloseTo(0, 10)
   })
 })
 
