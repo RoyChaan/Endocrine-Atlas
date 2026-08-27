@@ -81,7 +81,7 @@ describe('腺体数据完整性', () => {
     }
   })
 
-  it('肾上腺高于胰岛（T12 高于 L1–L2）', () => {
+  it('肾上腺高于胰腺（T12 高于 L1–L2）', () => {
     expect(glandById('adrenal').positions[0][1]).toBeGreaterThan(
       glandById('pancreas').positions[0][1],
     )

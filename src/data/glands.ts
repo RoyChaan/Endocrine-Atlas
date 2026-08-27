@@ -57,10 +57,10 @@ export const GLANDS: readonly Gland[] = [
   },
   {
     id: 'pancreas',
-    name: 'Pancreatic Islets',
-    chineseName: '胰岛',
+    name: 'Pancreas',
+    chineseName: '胰腺',
     positions: [[0, 1.08, -0.02]],
-    location: '上腹部，位于胰腺之中',
+    location: '上腹部，胃的后下方',
     hormones: ['胰岛素'],
     functions: ['降低血糖，调节糖类的代谢', '分泌不足会引起糖尿病'],
     color: '#7FD1A8',
