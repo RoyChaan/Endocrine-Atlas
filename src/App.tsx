@@ -1,25 +1,42 @@
 import { useState } from 'react'
-import { insetGlands } from './domain/glandRegistry'
+import { detailGlands, findGland } from './domain/glandRegistry'
+import {
+  INITIAL_VIEW,
+  bodySelectedId,
+  cardGlandId,
+  closeCard,
+  exitDetail,
+  openDetail,
+  selectGland,
+} from './domain/viewState'
+import type { ViewState } from './domain/viewState'
 import { AnatomyScene } from './scene/AnatomyScene'
 import { ControlsHint } from './ui/ControlsHint'
-import { GlandInset } from './ui/GlandInset'
+import { DetailEntry } from './ui/DetailEntry'
+import { DetailView } from './ui/DetailView'
 import { Header } from './ui/Header'
 import { KnowledgeCard } from './ui/KnowledgeCard'
 import { ResetButton } from './ui/ResetButton'
 import type { GlandId } from './types/gland'
 
 export function App() {
-  const [selectedId, setSelectedId] = useState<GlandId | null>(null)
+  const [view, setView] = useState<ViewState>(INITIAL_VIEW)
   /**
-   * 复位计数器。相机复位不能只靠 selectedId 变化来驱动 —— 用户在概览态下
-   * 转动/缩放后 selectedId 仍是 null，点重置就不会有任何反应。递增这个值
+   * 复位计数器。相机复位不能只靠选中项变化来驱动 —— 用户在概览态下
+   * 转动/缩放后选中项仍是 null，点重置就不会有任何反应。递增这个值
    * 给了 CameraRig 一个与选中状态无关的触发信号。
    */
   const [resetToken, setResetToken] = useState(0)
 
+  const detailGland = view.mode === 'detail' ? findGland(view.glandId) : null
+
   function handleReset() {
-    setSelectedId(null)
+    setView(INITIAL_VIEW)
     setResetToken((n) => n + 1)
+  }
+
+  function handleSelect(id: GlandId | null) {
+    setView((current) => selectGland(current, id))
   }
 
   return (
@@ -28,22 +45,30 @@ export function App() {
 
       <main className="app__body">
         <div className="app__viewer">
-          <AnatomyScene
-            selectedId={selectedId}
-            onSelect={setSelectedId}
-            resetToken={resetToken}
-          />
-          {insetGlands().map((gland) => (
-            <GlandInset
-              key={gland.id}
-              gland={gland}
-              isSelected={selectedId === gland.id}
-              onSelect={setSelectedId}
-            />
-          ))}
+          {detailGland ? (
+            <DetailView gland={detailGland} onExit={() => setView(exitDetail())} />
+          ) : (
+            <>
+              <AnatomyScene
+                selectedId={bodySelectedId(view)}
+                onSelect={handleSelect}
+                resetToken={resetToken}
+              />
+              {detailGlands().map((gland) => (
+                <DetailEntry
+                  key={gland.id}
+                  gland={gland}
+                  onOpen={(id) => setView(openDetail(id))}
+                />
+              ))}
+            </>
+          )}
         </div>
         <div className="app__panel">
-          <KnowledgeCard selectedId={selectedId} onClose={() => setSelectedId(null)} />
+          <KnowledgeCard
+            selectedId={cardGlandId(view)}
+            onClose={() => setView((current) => closeCard(current))}
+          />
         </div>
       </main>
 

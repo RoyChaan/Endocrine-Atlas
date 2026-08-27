@@ -62,6 +62,7 @@ jsdom 没有 WebGL，所以按 "需要多少 3D" 分层：
 |---|---|---|
 | `tests/data.test.ts` | Vitest | 数据完整性与解剖不变量 |
 | `tests/cameraFocus.test.ts` | Vitest | 聚焦数学，含防贴脸回归 |
+| `tests/viewState.test.ts` | Vitest | 人体/详情两种模式的全部状态迁移 |
 | `tests/scene.test.tsx` | `@react-three/test-renderer`（无需 WebGL） | 场景图、点击、高亮 |
 | `tests/app.smoke.test.tsx` | RTL + jsdom（mock 掉 Canvas） | DOM 层接线与内容一致性 |
 | `tests/toolchain.test.tsx` | Vitest | 工具链自检 |
@@ -74,19 +75,35 @@ jsdom 没有 WebGL，所以按 "需要多少 3D" 分层：
 甲状腺移出人体、破坏成对器官对称、让 `functions` 超出 3 条上限、把
 肾上腺降到胰腺之下 —— 每一项都被对应的断言抓到。
 
-## 独立小窗
+## 卵巢与睾丸：为什么需要两种视图
 
-`Gland.hasInset` 决定某个腺体是否**额外**在 3D 区右下角给一个小窗。
+卵巢与睾丸在解剖学上互斥 —— 同一具人体不可能两者兼有。因此：
 
-这是附加的细节视图，**不把腺体从人体里拿走** —— 全部 7 个腺体都嵌在
-人体内，`scene/GlandLayer` 一个不落地渲染。睾丸开这个标志，是因为它在
-半透明 mannequin 的盆腔下方不易看清（参考图也为它单开了一个小框）。
+- **人体上放的是卵巢。** `Gland.display === 'body'` 的 6 个腺体由
+  `scene/GlandLayer` 渲染成 marker。
+- **睾丸不在人体上。** `Gland.display === 'detail'`，由一个独立的详情
+  视图单独承载，可旋转可缩放，左上角有「返回人体」。
 
-因此 `insetGlands()` 是 `allGlands()` 的**子集**，不是另一半。
+`bodyGlands()` 与 `detailGlands()` 是互补的划分，不是包含关系；
+`tests/data.test.ts` 锁死了"无遗漏无重叠"以及"人体上有卵巢、没有睾丸"。
 
-两个入口完全等效：点小窗和点体内的 marker 都把 `selectedGlandId` 设为
-`testis`，主相机同样居中放大聚焦过去，小窗同步进入高亮态。带小窗的腺体
-在 `domain/cameraFocus.ts` 的 `poseForSelection` 里不享受任何特殊分支。
+### 视图状态
+
+这不是"选中了哪个腺体"，而是模式切换，所以有一个判别联合：
+
+```ts
+type ViewState =
+  | { mode: 'body'; selectedId: GlandId | null }
+  | { mode: 'detail'; glandId: GlandId }
+```
+
+全部迁移（`selectGland` / `openDetail` / `exitDetail` / `closeCard`）都是
+`domain/viewState.ts` 里的纯函数，`tests/viewState.test.ts` 完整覆盖。
+`App.tsx` 只持有一个 `useState<ViewState>`，把事件接到这些函数上。
+
+派生查询把"谁该看到什么"也收进了 domain：`cardGlandId(view)` 决定知识卡
+显示哪个腺体（两种模式下都可能有内容），`bodySelectedId(view)` 在详情模式
+下返回 `null`（人体场景此刻根本没渲染）。
 
 ## 两个 WebGL 层面的坑
 

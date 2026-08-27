@@ -8,14 +8,19 @@ export function allGlands(): readonly Gland[] {
   return GLANDS
 }
 
+/** 嵌在半透明人体内的腺体。GlandLayer 只渲染这些。 */
+export function bodyGlands(): readonly Gland[] {
+  return GLANDS.filter((g) => g.display === 'body')
+}
+
 /**
- * 额外带独立小窗的腺体（当前只有睾丸）。
+ * 不在人体内、由独立详情视图承载的腺体（当前只有睾丸）。
  *
- * 这是 allGlands() 的子集而非另一半 —— 小窗是附加的细节视图，
- * 这些腺体同样嵌在人体内，同样能被主相机聚焦。
+ * 与 bodyGlands() 互补而非包含：卵巢与睾丸解剖学上互斥，
+ * 同一具人体不可能两者兼有。
  */
-export function insetGlands(): readonly Gland[] {
-  return GLANDS.filter((g) => g.hasInset)
+export function detailGlands(): readonly Gland[] {
+  return GLANDS.filter((g) => g.display === 'detail')
 }
 
 /** 按 id 取腺体。id 不存在时抛错 —— 这是编程错误，不是用户输入错误。 */

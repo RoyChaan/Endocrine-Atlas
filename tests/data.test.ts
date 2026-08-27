@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { GLANDS } from '../src/data/glands'
-import { allGlands, findGland, glandById, insetGlands } from '../src/domain/glandRegistry'
+import { allGlands, bodyGlands, detailGlands, findGland, glandById } from '../src/domain/glandRegistry'
 import { BODY_BOUNDS, MAX_FUNCTIONS } from '../src/domain/constants'
 import type { GlandId } from '../src/types/gland'
 
@@ -94,26 +94,29 @@ describe('腺体数据完整性', () => {
   })
 })
 
-describe('独立小窗', () => {
-  it.each(GLANDS.map((g) => [g.id, g] as const))('%s 声明了 hasInset', (_id, gland) => {
-    expect(typeof gland.hasInset).toBe('boolean')
+describe('腺体的展示位置', () => {
+  it.each(GLANDS.map((g) => [g.id, g] as const))('%s 声明了 display', (_id, gland) => {
+    expect(['body', 'detail']).toContain(gland.display)
   })
 
-  it('恰好一个腺体额外带独立小窗，且是睾丸', () => {
-    expect(insetGlands().map((g) => g.id)).toEqual(['testis'])
+  it('恰好一个腺体需要独立详情视图，且是睾丸', () => {
+    expect(detailGlands().map((g) => g.id)).toEqual(['testis'])
   })
 
-  it('小窗是附加视图，不把腺体移出人体 —— 全部 7 个腺体都在人体内', () => {
-    // 主相机要能聚焦到睾丸，它就必须在人体里；小窗只是额外的细节视图。
-    expect(allGlands()).toHaveLength(GLANDS.length)
-    expect(allGlands().map((g) => g.id)).toContain('testis')
+  it('人体上有卵巢、没有睾丸 —— 同一个人不可能两者兼有', () => {
+    const bodyIds = bodyGlands().map((g) => g.id)
+    expect(bodyIds).toContain('ovary')
+    expect(bodyIds).not.toContain('testis')
   })
 
-  it('insetGlands 是 allGlands 的子集', () => {
-    const allIds = new Set(allGlands().map((g) => g.id))
-    for (const gland of insetGlands()) {
-      expect(allIds.has(gland.id)).toBe(true)
-    }
+  it('bodyGlands 与 detailGlands 恰好划分全部腺体，无遗漏无重叠', () => {
+    const body = bodyGlands().map((g) => g.id)
+    const detail = detailGlands().map((g) => g.id)
+
+    expect(body).not.toHaveLength(0)
+    expect(detail).not.toHaveLength(0)
+    expect(new Set([...body, ...detail]).size).toBe(GLANDS.length)
+    expect([...body, ...detail].sort()).toEqual(allGlands().map((g) => g.id).sort())
   })
 })
 

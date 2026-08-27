@@ -1,13 +1,13 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
-import { allGlands, insetGlands } from '../src/domain/glandRegistry'
+import { bodyGlands, detailGlands } from '../src/domain/glandRegistry'
 import type { GlandId } from '../src/types/gland'
 
-// InsetScene 内含 <Canvas>，jsdom 无 WebGL。桩掉它，保留 GlandInset 的
-// DOM 外壳（按钮、标签、aria-pressed）作为真实被测对象。
-vi.mock('../src/scene/InsetScene', () => ({
-  InsetScene: () => <div data-testid="inset-scene-stub" />,
+// GlandSoloScene 内含 <Canvas>，jsdom 无 WebGL。桩掉它，保留 DetailEntry
+// 与 DetailView 的 DOM 外壳（按钮、标签、返回）作为真实被测对象。
+vi.mock('../src/scene/GlandSoloScene', () => ({
+  GlandSoloScene: () => <div data-testid="solo-scene-stub" />,
 }))
 
 vi.mock('../src/scene/AnatomyScene', () => ({
@@ -21,7 +21,7 @@ vi.mock('../src/scene/AnatomyScene', () => ({
     <div data-testid="scene-stub">
       {/* 把 resetToken 暴露到 DOM，这样"复位是否被触发"在 jsdom 里可断言 */}
       <span data-testid="reset-token">{resetToken}</span>
-      {allGlands().map((gland) => (
+      {bodyGlands().map((gland) => (
         <button key={gland.id} type="button" onClick={() => onSelect(gland.id)}>
           {`select-${gland.id}`}
         </button>
@@ -44,7 +44,7 @@ describe('App 端到端冒烟', () => {
     expect(screen.queryByRole('complementary')).not.toBeInTheDocument()
   })
 
-  it.each(allGlands().map((g) => [g.id, g] as const))(
+  it.each(bodyGlands().map((g) => [g.id, g] as const))(
     '选中 %s 后，卡片内容逐条与 data/glands.ts 一致',
     async (id, gland) => {
       const user = userEvent.setup()
@@ -100,59 +100,92 @@ describe('App 端到端冒烟', () => {
     expect(screen.queryByRole('complementary')).not.toBeInTheDocument()
   })
 
-  it('睾丸的独立小窗渲染出来，标注中英文名', () => {
+  it('人体上没有睾丸的选择入口 —— 它不在人体上', () => {
     render(<App />)
-    const [testis] = insetGlands()
-    const inset = screen.getByRole('button', { name: new RegExp(testis.chineseName) })
-    expect(inset).toHaveTextContent(testis.chineseName)
-    expect(inset).toHaveTextContent(testis.name)
-    expect(inset).toHaveAttribute('aria-pressed', 'false')
+    expect(screen.queryByRole('button', { name: 'select-testis' })).not.toBeInTheDocument()
   })
 
-  it('点击独立小窗选中睾丸并弹出知识卡', async () => {
+  it('人体模式下有睾丸的详情入口', () => {
+    render(<App />)
+    const [testis] = detailGlands()
+    const entry = screen.getByRole('button', { name: `单独查看${testis.chineseName}` })
+    expect(entry).toHaveTextContent(testis.chineseName)
+    expect(entry).toHaveTextContent(testis.name)
+  })
+
+  it('点击入口进入睾丸单独视图：人体消失，出现返回按钮与知识卡', async () => {
     const user = userEvent.setup()
     render(<App />)
-    const [testis] = insetGlands()
+    const [testis] = detailGlands()
 
-    await user.click(screen.getByRole('button', { name: new RegExp(testis.chineseName) }))
+    await user.click(screen.getByRole('button', { name: `单独查看${testis.chineseName}` }))
+
+    // 人体场景已从画面上移除
+    expect(screen.queryByTestId('scene-stub')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /返回人体/ })).toBeInTheDocument()
 
     const card = screen.getByRole('complementary')
     expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent(testis.chineseName)
     expect(card).toHaveTextContent(testis.location)
+    for (const hormone of testis.hormones) {
+      expect(card).toHaveTextContent(hormone)
+    }
     for (const fn of testis.functions) {
       expect(card).toHaveTextContent(fn)
     }
   })
 
-  it('选中后小窗进入按下态，重置后恢复', async () => {
+  it('点返回按钮退回人体，入口重新出现', async () => {
     const user = userEvent.setup()
     render(<App />)
-    const [testis] = insetGlands()
-    const nameMatcher = new RegExp(testis.chineseName)
+    const [testis] = detailGlands()
+    const entryName = `单独查看${testis.chineseName}`
 
-    await user.click(screen.getByRole('button', { name: nameMatcher }))
-    expect(screen.getByRole('button', { name: nameMatcher })).toHaveAttribute(
-      'aria-pressed',
-      'true',
-    )
+    await user.click(screen.getByRole('button', { name: entryName }))
+    await user.click(screen.getByRole('button', { name: /返回人体/ }))
 
-    await user.click(screen.getByRole('button', { name: '重新查看全部' }))
-    expect(screen.getByRole('button', { name: nameMatcher })).toHaveAttribute(
-      'aria-pressed',
-      'false',
-    )
+    expect(screen.getByTestId('scene-stub')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: entryName })).toBeInTheDocument()
+    expect(screen.queryByRole('complementary')).not.toBeInTheDocument()
   })
 
-  it('选中人体内的腺体时，小窗不进入按下态', async () => {
+  it('详情视图中点重置也退回人体', async () => {
     const user = userEvent.setup()
     render(<App />)
-    const [testis] = insetGlands()
+    const [testis] = detailGlands()
+
+    await user.click(screen.getByRole('button', { name: `单独查看${testis.chineseName}` }))
+    await user.click(screen.getByRole('button', { name: '重新查看全部' }))
+
+    expect(screen.getByTestId('scene-stub')).toBeInTheDocument()
+    expect(screen.queryByRole('complementary')).not.toBeInTheDocument()
+  })
+
+  it('详情视图中关闭知识卡等同于退回人体', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    const [testis] = detailGlands()
+
+    await user.click(screen.getByRole('button', { name: `单独查看${testis.chineseName}` }))
+    await user.click(screen.getByRole('button', { name: '关闭' }))
+
+    expect(screen.getByTestId('scene-stub')).toBeInTheDocument()
+    expect(screen.queryByRole('complementary')).not.toBeInTheDocument()
+  })
+
+  it('从人体选中项进入详情，返回后不残留旧的选中项', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    const [testis] = detailGlands()
 
     await user.click(screen.getByRole('button', { name: 'select-thyroid' }))
+    expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent('甲状腺')
 
-    expect(
-      screen.getByRole('button', { name: new RegExp(testis.chineseName) }),
-    ).toHaveAttribute('aria-pressed', 'false')
+    await user.click(screen.getByRole('button', { name: `单独查看${testis.chineseName}` }))
+    expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent(testis.chineseName)
+
+    await user.click(screen.getByRole('button', { name: /返回人体/ }))
+    expect(screen.queryByRole('complementary')).not.toBeInTheDocument()
   })
 
   it('概览态下点重置仍会触发复位（相机被转动过但没选中任何腺体的情形）', async () => {
@@ -209,7 +242,7 @@ describe('App 端到端冒烟', () => {
     const user = userEvent.setup()
     render(<App />)
 
-    await user.click(screen.getByRole('button', { name: 'select-testis' }))
+    await user.click(screen.getByRole('button', { name: 'select-ovary' }))
     expect(screen.getByRole('complementary')).toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: 'select-none' }))
