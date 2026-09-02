@@ -1,0 +1,174 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>placement</title>
+    <style>
+      body { margin: 0; background: #0d1117; font: 12px system-ui; color: #ccd }
+      .grid { display: flex }
+      .cell { width: 420px; height: 720px; position: relative }
+      .cell b { position: absolute; left: 6px; top: 4px; z-index: 2 }
+      pre { padding: 10px 16px; margin: 0; font: 12px/1.6 ui-monospace, monospace; white-space: pre }
+      .bad { color: #ff8080 }
+      .ok { color: #7fd1a8 }
+    </style>
+  </head>
+  <body>
+    <pre id="report">measuring…</pre>
+    <div class="grid" id="g"></div>
+    <script type="module">
+      // 摆位检查台。不是产品的一部分 —— 只在开发时用浏览器跑一次，
+      // 回答两个问题：每个器官有没有戳出体表，以及正面 / 侧面看落位对不对。
+      window.onerror = (m) => { document.title = 'ERR ' + m }
+      window.onunhandledrejection = (e) => {
+        document.title = 'REJ ' + ((e.reason && e.reason.message) || e.reason)
+      }
+
+      import * as THREE from 'three'
+      import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
+      import { createBodyShellMaterial } from '/src/scene/bodyShell.ts'
+      // 摆位必须走和场景里同一份实现 —— 这里再抄一遍的话，改了组件忘了改这边，
+      // 报告就会去量一个应用根本不会渲染的摆法（加 lateralScale 时正是如此）。
+      import { placeOrgan } from '/src/scene/organPlacement.ts'
+      import { GLANDS } from '/src/data/glands.ts'
+
+      const loader = new GLTFLoader()
+      const scene = new THREE.Scene()
+      scene.add(new THREE.HemisphereLight(0xe8f1f8, 0x232c38, 0.85))
+      scene.add(new THREE.AmbientLight(0xffffff, 0.16))
+      const key = new THREE.DirectionalLight(0xfff4e8, 1.7)
+      key.position.set(2.2, 3, 2.6)
+      scene.add(key)
+      const fill = new THREE.DirectionalLight(0xc2d8ff, 0.55)
+      fill.position.set(-2.6, 0.8, 1.6)
+      scene.add(fill)
+      const rim = new THREE.DirectionalLight(0xcfe2ff, 0.95)
+      rim.position.set(-0.8, 1.6, -3)
+      scene.add(rim)
+
+      const bodyGltf = await loader.loadAsync('/models/body.glb')
+      let bodyMesh = null
+      bodyGltf.scene.traverse((n) => {
+        if (!bodyMesh && n.isMesh) bodyMesh = n
+      })
+      scene.add(new THREE.Mesh(bodyMesh.geometry, createBodyShellMaterial()))
+
+      // 内外判定用射线奇偶：从待测点朝某个方向打出去，穿过封闭曲面的次数
+      // 是奇数就在内部。人体网格是封闭的（build-body.mjs 会检查并补洞），
+      // 所以这条成立。六个轴向各投一次取多数 —— 单条射线正好擦过一条边或
+      // 一个顶点时计数会错，多数表决把这种偶发误判摊掉。
+      const probe = new THREE.Mesh(
+        bodyMesh.geometry,
+        // 必须 DoubleSide：射线从体内射出去，打到的是曲面的**背面**，
+        // FrontSide 的材质压根不记这次相交，奇偶判定会把所有内部点判成外面。
+        new THREE.MeshBasicMaterial({ side: THREE.DoubleSide }),
+      )
+      probe.updateMatrixWorld(true)
+      const raycaster = new THREE.Raycaster()
+      raycaster.firstHitOnly = false
+      // 方向刻意**不取坐标轴**。人体网格关于 x = 0 严格对称，从正中线上的点
+      // 沿 ±X 打出去会正好擦过一整排共面三角形的公共边，相交次数时多时少，
+      // 奇偶判定随机出错 —— 表现为深埋在体内的点被报成"体外"。这几个方向是
+      // 随手取的无理斜向，与网格的任何对称面、任何行列都不平行。
+      const DIRS = [
+        [0.573, 0.717, 0.397], [-0.717, 0.397, 0.573], [0.397, -0.573, 0.717],
+        [-0.397, -0.717, -0.573], [0.717, 0.573, -0.397], [-0.573, 0.397, -0.717],
+      ].map(([x, y, z]) => new THREE.Vector3(x, y, z).normalize())
+
+      function isInside(point) {
+        let odd = 0
+        for (const dir of DIRS) {
+          raycaster.set(point, dir)
+          if (raycaster.intersectObject(probe, false).length % 2 === 1) odd += 1
+        }
+        return odd >= 4
+      }
+
+      const body = GLANDS.filter((g) => g.display === 'body')
+      const loaded = await Promise.all(body.map((g) => loader.loadAsync(g.model.url)))
+
+      const rows = []
+      body.forEach((gland, i) => {
+        const object = loaded[i].scene.clone(true)
+        const placed = placeOrgan(object, gland)
+        scene.add(placed)
+        placed.updateWorldMatrix(true, true)
+
+        const axes = new THREE.AxesHelper(0.05)
+        axes.position.set(...gland.model.anchor)
+        scene.add(axes)
+
+        // 抽样模型的真实顶点问内外。逐点全查太慢（几万顶点 × 六条射线 ×
+        // 一万八千个三角形），每 211 个取一个 —— 素数步长避免和网格的行列
+        // 周期共振，漏掉整条边缘。
+        let outside = 0
+        let total = 0
+        let worst = null
+        const v = new THREE.Vector3()
+        object.traverse((node) => {
+          if (!node.isMesh) return
+          const pos = node.geometry.attributes.position
+          for (let p = 0; p < pos.count; p += 211) {
+            v.fromBufferAttribute(pos, p).applyMatrix4(node.matrixWorld)
+            total += 1
+            if (!isInside(v)) {
+              outside += 1
+              if (!worst || v.length() > worst.length()) worst = v.clone()
+            }
+          }
+        })
+
+        const worldBox = new THREE.Box3().setFromObject(placed)
+        rows.push({ id: gland.id, outside, total, worst, min: worldBox.min, max: worldBox.max })
+      })
+
+      const n = (x) => (x >= 0 ? '+' : '') + x.toFixed(3)
+      document.getElementById('report').innerHTML =
+        ['腺体          体外采样点   外露点(x,y,z)          世界包围盒 x / y / z']
+          .concat(
+            rows.map((r) => {
+              const at = r.worst ? `${n(r.worst.x)},${n(r.worst.y)},${n(r.worst.z)}` : '—'
+              return (
+                `<span class="${r.outside > 0 ? 'bad' : 'ok'}">` +
+                r.id.padEnd(13) +
+                `${r.outside}/${r.total}`.padStart(9) +
+                '   ' +
+                at.padEnd(22) +
+                `${n(r.min.x)}..${n(r.max.x)}  ${n(r.min.y)}..${n(r.max.y)}  ${n(r.min.z)}..${n(r.max.z)}` +
+                '</span>'
+              )
+            }),
+          )
+          .join('\n')
+
+      const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true })
+      renderer.setSize(420, 720)
+      renderer.setClearColor(0x0d1117)
+      const grid = document.getElementById('g')
+
+      // 侧面视角相机在 +X：屏幕右是 −Z（背侧），屏幕左是 +Z（腹侧）。
+      const VIEWS = [
+        ['全身正面', [0, 0.95, 2.7], [0, 0.95, 0]],
+        ['全身侧面（左=腹侧）', [2.7, 0.95, 0], [0, 0.95, 0]],
+        ['躯干正面', [0, 1.25, 1.2], [0, 1.25, 0]],
+        ['头颈侧面（左=腹侧）', [0.7, 1.55, 0], [0, 1.55, 0]],
+      ]
+      for (const [label, position, target] of VIEWS) {
+        const cell = document.createElement('div')
+        cell.className = 'cell'
+        cell.innerHTML = `<b>${label}</b>`
+        grid.appendChild(cell)
+        const camera = new THREE.PerspectiveCamera(40, 420 / 720, 0.01, 100)
+        camera.position.set(...position)
+        camera.lookAt(...target)
+        renderer.render(scene, camera)
+        const canvas = document.createElement('canvas')
+        canvas.width = 420
+        canvas.height = 720
+        canvas.getContext('2d').drawImage(renderer.domElement, 0, 0)
+        cell.appendChild(canvas)
+      }
+      document.title = 'READY'
+    </script>
+  </body>
+</html>

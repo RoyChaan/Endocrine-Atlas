@@ -1,0 +1,43 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+body{margin:0;background:#fff;font:12px system-ui}
+.grid{display:flex}
+.cell{width:340px;height:340px;position:relative;border:1px solid #ddd}
+.cell b{position:absolute;left:4px;top:2px;z-index:2;background:#fff9}
+</style></head><body>
+<div class="grid" id="g"></div>
+<script type="module">
+import * as THREE from 'three'
+import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader.js'
+const name=new URLSearchParams(location.search).get('model')
+// front 相机在 +Z，看到 XY 面（右=+X，上=+Y）
+// side  相机在 +X，看到 ZY 面（右=-Z，上=+Y）
+// top   相机在 +Y 俯视，看到 XZ 面（右=+X，下=+Z）
+const VIEWS={'front +Z':[0,0,1],'side +X':[1,0,0],'top +Y':[0,1,0.0001]}
+const g=document.getElementById('g')
+const gltf=await new GLTFLoader().loadAsync(`/models/${name}.glb`)
+const root=gltf.scene
+const box=new THREE.Box3().setFromObject(root)
+const size=box.getSize(new THREE.Vector3()), ctr=box.getCenter(new THREE.Vector3())
+const r=Math.max(size.x,size.y,size.z)
+const ren=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true})
+ren.setSize(340,340); ren.setClearColor(0xffffff)
+const sc=new THREE.Scene()
+sc.add(new THREE.HemisphereLight(0xffffff,0x666677,2.0))
+const d=new THREE.DirectionalLight(0xffffff,2.0); d.position.set(1,2,3); sc.add(d)
+root.position.sub(ctr); sc.add(root)
+sc.add(new THREE.AxesHelper(r*0.75))
+for(const [vn,dir] of Object.entries(VIEWS)){
+  const cell=document.createElement('div');cell.className='cell'
+  cell.innerHTML=`<b>${name} · ${vn}<br>${size.x.toFixed(2)}×${size.y.toFixed(2)}×${size.z.toFixed(2)}</b>`
+  g.appendChild(cell)
+  const cam=new THREE.PerspectiveCamera(35,1,0.01,100)
+  cam.position.set(dir[0]*r*2.4,dir[1]*r*2.4,dir[2]*r*2.4)
+  cam.up.set(0,vn==='top +Y'?0:1,vn==='top +Y'?-1:0)
+  cam.lookAt(0,0,0)
+  ren.render(sc,cam)
+  const c=document.createElement('canvas'); c.width=c.height=340
+  c.getContext('2d').drawImage(ren.domElement,0,0)
+  cell.appendChild(c)
+}
+document.title='READY'
+</script></body></html>

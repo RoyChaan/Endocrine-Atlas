@@ -1,0 +1,43 @@
+<!doctype html><html><head><meta charset="utf-8"><title>head</title>
+<style>body{margin:0;background:#111;color:#ccd;font:12px system-ui}
+.grid{display:flex}.cell{width:440px;height:440px;position:relative}
+.cell b{position:absolute;left:6px;top:4px;z-index:2}</style></head><body>
+<div class="grid" id="g"></div>
+<script type="module">
+// 头部剖面诊断页：用裁剪面把头切开，看清皮肤曲面在眼窝 / 口腔处
+// 到底往里折进去多深 —— 半透明壳下那些内陷面会读成"漂在头里的球"。
+window.onerror=(m)=>{document.title='ERR '+m}
+import * as THREE from 'three'
+import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader.js'
+const gltf=await new GLTFLoader().loadAsync('/models/body.glb')
+let mesh=null; gltf.scene.traverse(n=>{if(!mesh&&n.isMesh)mesh=n})
+
+const ren=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true})
+ren.setSize(440,440); ren.setClearColor(0x111111); ren.localClippingEnabled=true
+const g=document.getElementById('g')
+
+const VIEWS=[
+  ['剖面 x<0.002（侧视）', new THREE.Plane(new THREE.Vector3(-1,0,0),0.002), [0.8,1.62,0]],
+  ['剖面 x<0.03（侧视）',  new THREE.Plane(new THREE.Vector3(-1,0,0),0.03),  [0.8,1.62,0]],
+  ['剖面 z<0.02（前视）',  new THREE.Plane(new THREE.Vector3(0,0,-1),0.02),  [0,1.62,0.8]],
+  ['整头（前视，双面）',    null,                                             [0,1.62,0.8]],
+]
+for(const [label,plane,camPos] of VIEWS){
+  const cell=document.createElement('div'); cell.className='cell'
+  cell.innerHTML=`<b>${label}</b>`; g.appendChild(cell)
+  const sc=new THREE.Scene()
+  sc.add(new THREE.HemisphereLight(0xffffff,0x334455,1.6))
+  const d=new THREE.DirectionalLight(0xffffff,1.6); d.position.set(2,3,3); sc.add(d)
+  const mat=new THREE.MeshStandardMaterial({
+    color:0xc8d6e0, roughness:0.7, side:THREE.DoubleSide,
+    clippingPlanes: plane?[plane]:[],
+  })
+  sc.add(new THREE.Mesh(mesh.geometry, mat))
+  const cam=new THREE.PerspectiveCamera(32,1,0.01,10)
+  cam.position.set(...camPos); cam.lookAt(0,1.62,0)
+  ren.render(sc,cam)
+  const c=document.createElement('canvas'); c.width=c.height=440
+  c.getContext('2d').drawImage(ren.domElement,0,0); cell.appendChild(c)
+}
+document.title='READY'
+</script></body></html>
