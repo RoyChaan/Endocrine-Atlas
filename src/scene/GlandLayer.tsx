@@ -1,6 +1,6 @@
 import { bodyGlands } from '../domain/glandRegistry'
 import type { GlandId } from '../types/gland'
-import { GlandMarker } from './GlandMarker'
+import { OrganModel } from './OrganModel'
 
 interface GlandLayerProps {
   selectedId: GlandId | null
@@ -8,9 +8,11 @@ interface GlandLayerProps {
 }
 
 /**
- * 把数据展开成 marker。成对器官的 positions.length === 2，因此渲染出
- * 两个 marker，但它们共享同一个 gland.id —— 一条知识条目对应多个
- * marker，无需重复条目（Design.md §19）。
+ * 人体内的全部腺体模型。
+ *
+ * 一条数据 → 一个模型。成对器官（肾上腺、卵巢）不需要在这里展开成两份：
+ * 生成器给的模型本身就含左右两侧（以及肾、子宫这些解剖背景），
+ * 一份模型就是一条知识条目，点哪一侧都落到同一个 id 上。
  *
  * 只渲染 display === 'body' 的腺体。睾丸不在其中 —— 人体上放的是卵巢，
  * 两者解剖学上互斥，睾丸由 ui/DetailView 的独立视图承载。
@@ -20,18 +22,15 @@ export function GlandLayer({ selectedId, onSelect }: GlandLayerProps) {
 
   return (
     <group name="gland-layer">
-      {bodyGlands().flatMap((gland) =>
-        gland.positions.map((position, index) => (
-          <GlandMarker
-            key={`${gland.id}-${index}`}
-            gland={gland}
-            position={position}
-            isSelected={selectedId === gland.id}
-            hasSelection={hasSelection}
-            onSelect={onSelect}
-          />
-        )),
-      )}
+      {bodyGlands().map((gland) => (
+        <OrganModel
+          key={gland.id}
+          gland={gland}
+          isSelected={selectedId === gland.id}
+          hasSelection={hasSelection}
+          onSelect={onSelect}
+        />
+      ))}
     </group>
   )
 }

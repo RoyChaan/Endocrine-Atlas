@@ -4,26 +4,32 @@ import { MIN_FOCUS_DISTANCE } from './constants'
 /** 聚焦时相机相对腺体的仰角（弧度）。略俯视，比纯水平更易读出深度。 */
 const FOCUS_ELEVATION = 0.18
 
-/** 概览机位：能看到上半身全貌（Design.md §8）。Reset 的目标。 */
+/**
+ * 概览机位：一开始就框住**上半身**（Design.md §8）。Reset 的目标。
+ *
+ * 七个腺体全部落在 y ∈ [0.90, 1.72]，下半身没有任何要展示的东西。
+ * 早先那个能看到全身的机位把一半画面让给了两条腿，每个腺体只剩几十像素。
+ *
+ * 距离 1.27、竖直视角 40°，纵向视野约 0.93 m —— 从耻骨上方一直框到头顶，
+ * 上下各留约 4 cm 余量。人体切掉双臂后只有 0.42 m 宽，横向绰绰有余，
+ * 所以取景由**纵向**定，再近腺体就会被上下裁掉。
+ */
 export const OVERVIEW_POSE: CameraPose = {
-  position: [0, 1.35, 2.4],
-  target: [0, 1.15, 0],
+  position: [0, 1.36, 1.27],
+  target: [0, 1.3, 0],
 }
 
-export function centroid(positions: readonly Vec3[]): Vec3 {
-  if (positions.length === 0) {
-    throw new Error('centroid() requires at least one position')
-  }
-  let x = 0
-  let y = 0
-  let z = 0
-  for (const p of positions) {
-    x += p[0]
-    y += p[1]
-    z += p[2]
-  }
-  const n = positions.length
-  return [x / n, y / n, z / n]
+/**
+ * 相机该注视腺体的哪一点：模型落位点，加上 `focusOffset`。
+ *
+ * 偏移是必要的 —— 有几个模型里"腺体本身"并不在包围盒中心。最典型的是
+ * 肾上腺：模型的主体是那对肾脏，腺体只是扣在肾上极的两顶小帽子，
+ * 对着包围盒中心推近相机，画面正中会是肾门而不是腺体。
+ */
+export function focusPoint(gland: Gland): Vec3 {
+  const [ax, ay, az] = gland.model.anchor
+  const [ox, oy, oz] = gland.focusOffset ?? [0, 0, 0]
+  return [ax + ox, ay + oy, az + oz]
 }
 
 export function easeInOutCubic(t: number): number {
@@ -44,7 +50,7 @@ export function azimuthFrom(position: Vec3, target: Vec3): number {
  * 丢失周边解剖上下文（Design.md §10）。
  */
 export function computeTargetPose(gland: Gland, azimuth: number): CameraPose {
-  const target = centroid(gland.positions)
+  const target = focusPoint(gland)
   const d = Math.max(gland.focusDistance, MIN_FOCUS_DISTANCE)
   const horizontal = d * Math.cos(FOCUS_ELEVATION)
   return {

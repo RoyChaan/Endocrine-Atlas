@@ -16,7 +16,9 @@ export function DetailView({ gland, onExit }: DetailViewProps) {
   return (
     <section className="detail-view" aria-label={`${gland.chineseName}单独视图`}>
       <div className="detail-view__scene">
-        <GlandSoloScene gland={gland} isHighlighted interactive />
+        {/* 画面里只有这一个器官，没有别的东西要跟它抢注意力，
+            所以不加选中高亮 —— 那层主题色染上去只会盖掉组织本身的颜色。 */}
+        <GlandSoloScene gland={gland} isHighlighted={false} interactive />
       </div>
 
       <button type="button" className="detail-view__back" onClick={onExit}>

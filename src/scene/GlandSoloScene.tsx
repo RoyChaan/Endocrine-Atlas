@@ -1,12 +1,14 @@
+import { Suspense } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
 import { computeTargetPose } from '../domain/cameraFocus'
 import type { Gland } from '../types/gland'
-import { GlandMarker } from './GlandMarker'
+import { OrganModel } from './OrganModel'
+import { SceneLights } from './SceneLights'
 
 interface GlandSoloSceneProps {
   gland: Gland
-  /** 是否高亮（满不透明 + 放大）。 */
+  /** 是否高亮（满不透明 + 主题色自发光）。 */
   isHighlighted: boolean
   /**
    * 是否允许旋转/缩放。
@@ -36,24 +38,17 @@ export function GlandSoloScene({ gland, isHighlighted, interactive }: GlandSoloS
         camera.lookAt(...target)
       }}
     >
-      <ambientLight intensity={0.85} />
-      <directionalLight position={[1, 2, 3]} intensity={1.2} />
-      <directionalLight position={[-1, 0.5, -2]} intensity={0.4} />
+      <SceneLights />
 
-      <group name={`solo-${gland.id}`}>
-        {gland.positions.map((position, index) => (
-          <GlandMarker
-            key={`${gland.id}-${index}`}
-            gland={gland}
-            position={position}
-            isSelected={isHighlighted}
-            // 场景里只有这一个腺体，"是否有选中项"等同于"它是否被高亮"。
-            hasSelection={isHighlighted}
-            // 点击由外层 DOM 承担：缩略图是 <button>，详情视图有自己的返回按钮。
-            onSelect={() => {}}
-          />
-        ))}
-      </group>
+      <Suspense fallback={null}>
+        <OrganModel
+          gland={gland}
+          isSelected={isHighlighted}
+          // 场景里只有这一个腺体，"是否有选中项"等同于"它是否被高亮"。
+          hasSelection={isHighlighted}
+          // 点击由外层 DOM 承担：缩略图是 <button>，详情视图有自己的返回按钮。
+        />
+      </Suspense>
 
       {interactive && (
         <OrbitControls
@@ -63,8 +58,8 @@ export function GlandSoloScene({ gland, isHighlighted, interactive }: GlandSoloS
           enableZoom
           minPolarAngle={1.0}
           maxPolarAngle={2.1}
-          minDistance={0.12}
-          maxDistance={1.2}
+          minDistance={0.1}
+          maxDistance={1.0}
           enableDamping
           dampingFactor={0.08}
         />

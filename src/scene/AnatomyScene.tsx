@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { Suspense, useRef } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
@@ -7,6 +7,7 @@ import type { GlandId } from '../types/gland'
 import { BodyModel } from './BodyModel'
 import { CameraRig } from './CameraRig'
 import { GlandLayer } from './GlandLayer'
+import { SceneLights } from './SceneLights'
 
 interface AnatomySceneProps {
   selectedId: GlandId | null
@@ -33,12 +34,14 @@ export function AnatomyScene({ selectedId, onSelect, resetToken }: AnatomySceneP
       dpr={[1, 2]}
       onPointerMissed={() => onSelect(null)}
     >
-      <ambientLight intensity={0.7} />
-      <directionalLight position={[2, 3, 4]} intensity={1.1} />
-      <directionalLight position={[-2, 1, -3]} intensity={0.4} />
+      <SceneLights />
 
-      <BodyModel />
-      <GlandLayer selectedId={selectedId} onSelect={onSelect} />
+      {/* 人体与腺体现在都是外部 GLB，一起等。Suspense 兜在 Canvas 里面
+          而不是外面 —— 相机、灯光、OrbitControls 不该跟着一起挂起重建。 */}
+      <Suspense fallback={null}>
+        <BodyModel />
+        <GlandLayer selectedId={selectedId} onSelect={onSelect} />
+      </Suspense>
 
       <OrbitControls
         ref={controlsRef}
@@ -48,7 +51,7 @@ export function AnatomyScene({ selectedId, onSelect, resetToken }: AnatomySceneP
         enableZoom
         minPolarAngle={1.0}
         maxPolarAngle={2.1}
-        minDistance={0.3}
+        minDistance={0.2}
         maxDistance={4}
         enableDamping
         dampingFactor={0.08}
