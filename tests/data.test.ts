@@ -1,13 +1,19 @@
 import { describe, expect, it } from 'vitest'
 import { GLANDS } from '../src/data/glands'
-import { allGlands, bodyGlands, detailGlands, findGland, glandById } from '../src/domain/glandRegistry'
+import {
+  allGlands,
+  bodyGlands,
+  detailGlands,
+  findGland,
+  glandById,
+} from '../src/domain/glandRegistry'
 import { BODY_BOUNDS, MAX_FUNCTIONS } from '../src/domain/constants'
 import type { GlandId } from '../src/types/gland'
 
 const EXPECTED_IDS: readonly GlandId[] = [
-  'hypothalamus',
   'pituitary',
   'thyroid',
+  'thymus',
   'adrenal',
   'pancreas',
   'ovary',
@@ -40,57 +46,73 @@ describe('腺体数据完整性', () => {
       expect(text.trim()).not.toBe('')
     }
   })
+})
 
-  it.each(GLANDS.map((g) => [g.id, g] as const))('%s 至少有一个位置', (_id, gland) => {
-    expect(gland.positions.length).toBeGreaterThanOrEqual(1)
-    expect(gland.positions.length).toBeLessThanOrEqual(2)
+describe('模型落位', () => {
+  it('每个腺体各占一个模型文件，不重复', () => {
+    const urls = GLANDS.map((g) => g.model.url)
+    expect(new Set(urls).size).toBe(urls.length)
   })
 
-  it.each(GLANDS.map((g) => [g.id, g] as const))('%s 的坐标落在人体包围盒内', (_id, gland) => {
-    for (const [x, y, z] of gland.positions) {
-      expect(x).toBeGreaterThanOrEqual(BODY_BOUNDS.minX)
-      expect(x).toBeLessThanOrEqual(BODY_BOUNDS.maxX)
-      expect(y).toBeGreaterThanOrEqual(BODY_BOUNDS.minY)
-      expect(y).toBeLessThanOrEqual(BODY_BOUNDS.maxY)
-      expect(z).toBeGreaterThanOrEqual(BODY_BOUNDS.minZ)
-      expect(z).toBeLessThanOrEqual(BODY_BOUNDS.maxZ)
-    }
+  it.each(GLANDS.map((g) => [g.id, g] as const))('%s 的模型路径指向 public/models', (_id, gland) => {
+    expect(gland.model.url).toMatch(/^\/models\/[a-z]+\.glb$/)
   })
 
-  it('成对器官左右对称', () => {
-    const paired = GLANDS.filter((g) => g.positions.length === 2)
-    expect(paired.map((g) => g.id).sort()).toEqual(['adrenal', 'ovary', 'testis'])
+  it.each(GLANDS.map((g) => [g.id, g] as const))(
+    '%s 的尺寸在人体器官的合理量级（1 cm – 25 cm）',
+    (_id, gland) => {
+      expect(gland.model.size).toBeGreaterThan(0.01)
+      expect(gland.model.size).toBeLessThan(0.25)
+    },
+  )
 
-    for (const gland of paired) {
-      const [left, right] = gland.positions
-      expect(left[0]).toBeCloseTo(-right[0], 10)
-      expect(left[1]).toBeCloseTo(right[1], 10)
-      expect(left[2]).toBeCloseTo(right[2], 10)
-      expect(Math.abs(left[0])).toBeGreaterThan(0)
-    }
-  })
-
-  it.each(GLANDS.map((g) => [g.id, g] as const))('%s 的 focusDistance 为正', (_id, gland) => {
-    expect(gland.focusDistance).toBeGreaterThan(0)
+  it.each(GLANDS.map((g) => [g.id, g] as const))('%s 的落位点在人体包围盒内', (_id, gland) => {
+    const [x, y, z] = gland.model.anchor
+    expect(x).toBeGreaterThanOrEqual(BODY_BOUNDS.minX)
+    expect(x).toBeLessThanOrEqual(BODY_BOUNDS.maxX)
+    expect(y).toBeGreaterThanOrEqual(BODY_BOUNDS.minY)
+    expect(y).toBeLessThanOrEqual(BODY_BOUNDS.maxY)
+    expect(z).toBeGreaterThanOrEqual(BODY_BOUNDS.minZ)
+    expect(z).toBeLessThanOrEqual(BODY_BOUNDS.maxZ)
   })
 
   it('解剖高度自上而下排列，与数组顺序一致', () => {
-    const heights = GLANDS.map((g) => g.positions[0][1])
+    const heights = GLANDS.map((g) => g.model.anchor[1])
     for (let i = 1; i < heights.length; i += 1) {
       expect(heights[i]).toBeLessThan(heights[i - 1])
     }
   })
 
-  it('肾上腺高于胰腺（T12 高于 L1–L2）', () => {
-    expect(glandById('adrenal').positions[0][1]).toBeGreaterThan(
-      glandById('pancreas').positions[0][1],
-    )
+  it('甲状腺在颈部：高于胸腺，低于颅腔', () => {
+    const y = (id: GlandId) => glandById(id).model.anchor[1]
+    expect(y('thyroid')).toBeLessThan(y('pituitary'))
+    expect(y('thyroid')).toBeGreaterThan(y('thymus'))
   })
 
-  it('下丘脑高于垂体（Design.md §5）', () => {
-    expect(glandById('hypothalamus').positions[0][1]).toBeGreaterThan(
-      glandById('pituitary').positions[0][1],
-    )
+  it('肾与胰腺在前后方向上错开，肾在后', () => {
+    // 两个模型原来在 z 上重叠 5.1 cm，看上去是穿插在一起的。
+    // 解剖上肾贴后腹壁、胰腺在其前方，分层方向是确定的。
+    //
+    // 半厚由 `node scripts/measure-models.mjs` 量出：肾 3.5 cm、胰腺 3.0 cm，
+    // 所以两个落位点在 z 上至少要差 6.5 cm，两者的包围盒才不再相交。
+    const MIN_GAP = 0.065
+    const kidneyZ = glandById('adrenal').model.anchor[2]
+    const pancreasZ = glandById('pancreas').model.anchor[2]
+    expect(pancreasZ - kidneyZ).toBeGreaterThanOrEqual(MIN_GAP)
+  })
+
+  it('肾上腺的聚焦点落在肾模型的上半部 —— 腺体是顶端那对小帽', () => {
+    const adrenal = glandById('adrenal')
+    expect(adrenal.focusOffset?.[1] ?? 0).toBeGreaterThan(0)
+  })
+
+  it('只有大脑需要偏航修正 —— 其余模型导出时就是 +Z 朝腹侧', () => {
+    const rotated = GLANDS.filter((g) => (g.model.yaw ?? 0) !== 0)
+    expect(rotated.map((g) => g.id)).toEqual(['pituitary'])
+  })
+
+  it.each(GLANDS.map((g) => [g.id, g] as const))('%s 的 focusDistance 为正', (_id, gland) => {
+    expect(gland.focusDistance).toBeGreaterThan(0)
   })
 })
 
@@ -116,7 +138,9 @@ describe('腺体的展示位置', () => {
     expect(body).not.toHaveLength(0)
     expect(detail).not.toHaveLength(0)
     expect(new Set([...body, ...detail]).size).toBe(GLANDS.length)
-    expect([...body, ...detail].sort()).toEqual(allGlands().map((g) => g.id).sort())
+    expect(
+      [...body, ...detail].sort(),
+    ).toEqual(allGlands().map((g) => g.id).sort())
   })
 })
 

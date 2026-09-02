@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest'
 import {
   OVERVIEW_POSE,
   azimuthFrom,
-  centroid,
   computeTargetPose,
+  focusPoint,
   easeInOutCubic,
   interpolatePose,
   poseForSelection,
@@ -16,29 +16,33 @@ function distance(a: Vec3, b: Vec3): number {
   return Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2])
 }
 
-describe('centroid', () => {
-  it('单点返回自身', () => {
-    expect(centroid([[1, 2, 3]])).toEqual([1, 2, 3])
+describe('focusPoint', () => {
+  it('没有 focusOffset 时就是落位点本身', () => {
+    const gland = glandById('thyroid')
+    expect(gland.focusOffset).toBeUndefined()
+    expect(focusPoint(gland)).toEqual(gland.model.anchor)
   })
 
-  it('两点返回中点', () => {
-    expect(
-      centroid([
-        [-2, 4, 6],
-        [2, 4, 6],
-      ]),
-    ).toEqual([0, 4, 6])
+  it('有 focusOffset 时逐轴相加', () => {
+    const gland = glandById('adrenal')
+    const [ax, ay, az] = gland.model.anchor
+    const [ox, oy, oz] = gland.focusOffset ?? [0, 0, 0]
+    expect(focusPoint(gland)).toEqual([ax + ox, ay + oy, az + oz])
   })
 
-  it('空数组抛错', () => {
-    expect(() => centroid([])).toThrow('centroid() requires at least one position')
+  it('肾上腺的聚焦点比落位点高 —— 腺体在肾的上极，不在模型正中', () => {
+    const gland = glandById('adrenal')
+    expect(focusPoint(gland)[1]).toBeGreaterThan(gland.model.anchor[1])
   })
 
-  it('成对器官的质心落在正中线上', () => {
-    for (const gland of allGlands().filter((g) => g.positions.length === 2)) {
-      expect(centroid(gland.positions)[0]).toBeCloseTo(0, 10)
-    }
-  })
+  it.each(allGlands().map((g) => [g.id, g] as const))(
+    '%s 的聚焦点没有被偏移甩出人体（离落位点不超过 8 cm）',
+    (_id, gland) => {
+      const p = focusPoint(gland)
+      const a = gland.model.anchor
+      expect(Math.hypot(p[0] - a[0], p[1] - a[1], p[2] - a[2])).toBeLessThanOrEqual(0.08)
+    },
+  )
 })
 
 describe('easeInOutCubic', () => {
@@ -90,9 +94,9 @@ describe('interpolatePose', () => {
 })
 
 describe('computeTargetPose', () => {
-  it('target 等于腺体质心', () => {
+  it('target 等于腺体的聚焦点', () => {
     const gland = glandById('adrenal')
-    expect(computeTargetPose(gland, 0).target).toEqual(centroid(gland.positions))
+    expect(computeTargetPose(gland, 0).target).toEqual(focusPoint(gland))
   })
 
   it('对全部 7 个腺体，相机距离不小于阈值（防贴脸）', () => {
@@ -165,14 +169,14 @@ describe('poseForSelection', () => {
       const pose = poseForSelection(gland, 0.4)
       expect(pose).toEqual(computeTargetPose(gland, 0.4))
       expect(pose).not.toEqual(OVERVIEW_POSE)
-      expect(pose.target).toEqual(centroid(gland.positions))
+      expect(pose.target).toEqual(focusPoint(gland))
     }
   })
 
-  it('成对器官聚焦到两侧的质心', () => {
+  it('成对器官（模型自带左右两侧）聚焦到正中线上', () => {
     const ovary = glandById('ovary')
     const pose = poseForSelection(ovary, 0)
-    expect(pose.target).toEqual(centroid(ovary.positions))
+    expect(pose.target).toEqual(focusPoint(ovary))
     expect(pose.target[0]).toBeCloseTo(0, 10)
   })
 })
