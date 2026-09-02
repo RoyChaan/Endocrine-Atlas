@@ -23,3 +23,11 @@ pnpm-debug.log*
 *.njsproj
 *.sln
 *.sw?
+
+# MakeHuman 的基础网格与形变表（scripts/build-body.mjs 会自动拉取并缓存）。
+# 产物 public/models/body.glb 入库，源文件不入。
+vendor/
+
+# 第三方 3D 生成器导出的高模，每个 ~57 MB。
+# 它们是 scripts/build-organs.sh 的输入，减面后的产物在 public/models/ 下入库。
+Organ/新建文件夹/
