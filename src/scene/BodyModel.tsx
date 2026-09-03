@@ -3,9 +3,10 @@ import { useGLTF } from '@react-three/drei'
 import { Mesh } from 'three'
 import type { BufferGeometry, Object3D } from 'three'
 import { createBodyShellMaterial } from './bodyShell'
+import { assetUrl } from '../assetUrl'
 
 /** `scripts/build-body.mjs` 的产物：MakeHuman CC0 基础网格 + 女性形变表。 */
-const BODY_URL = '/models/body.glb'
+const BODY_URL = assetUrl('/models/body.glb')
 
 /**
  * 半透明女性人体虚影（Design.md §4、§20）。

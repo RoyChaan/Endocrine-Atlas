@@ -13,7 +13,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "verify": "npm run typecheck && npm run test && npm run build"
+    "verify": "npm run typecheck && npm run test && npm run build",
+    "deploy": "npm run build && npx --yes wrangler pages deploy dist --project-name endocrine-atlas --branch main --commit-dirty=true"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.8",

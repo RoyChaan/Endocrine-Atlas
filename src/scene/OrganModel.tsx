@@ -5,6 +5,7 @@ import type { Object3D } from 'three'
 import type { ThreeEvent } from '@react-three/fiber'
 import { placeOrgan } from './organPlacement'
 import type { Gland, GlandId } from '../types/gland'
+import { assetUrl } from '../assetUrl'
 
 /**
  * 不透明度。选中的那个保持全实，其余压暗，让"我现在看的是哪个"一眼可辨。
@@ -42,7 +43,7 @@ interface OrganModelProps {
  * 所以 `useGLTF` 拿到的场景每次都 `clone(true)`，材质也各复制一份。
  */
 export function OrganModel({ gland, isSelected, hasSelection, onSelect }: OrganModelProps) {
-  const { scene } = useGLTF(gland.model.url)
+  const { scene } = useGLTF(assetUrl(gland.model.url))
 
   // 克隆与摆位必须在**同一个** useMemo 里。
   //
