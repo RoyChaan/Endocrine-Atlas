@@ -43,11 +43,16 @@ const TARGETS = [
     'targets/macrodetails/proportions/female-young-averagemuscle-averageweight-idealproportions.target',
     1,
   ],
+  // 罩杯收到最小。
+  //
+  // MakeHuman 的罩杯 / 挺度以"中等"为基准，中等就是零位移，仓库里没有这个
+  // 文件（只有 max / min 两端），女性胸型本身含在 caucasian-female-young 里。
+  // 而这具网格是**教学用的人体虚影**：侧面和背面转过去时，中等罩杯的轮廓
+  // 比胸腔里那些腺体还抢眼 —— 看的人注意力全跑偏了。收到最小罩杯，性别特征
+  // 仍在（卵巢、雌激素那张卡还得对得上一具女性躯体），但不再是画面的主角。
+  ['targets/breast/female-young-averagemuscle-averageweight-mincup-averagefirmness.target', 1],
+  ['targets/breast/breast-point-decr.target', 1],
 ]
-
-// 没有胸型 target：MakeHuman 的罩杯 / 挺度都以"中等"为基准，
-// 中等罩杯 + 中等挺度就是零位移，仓库里根本没有这个文件（只有 max / min 两端）。
-// 女性胸型本身已经包含在 caucasian-female-young 这张表里了。
 
 /** 成品总高（米）。与 domain/constants.ts 的 BODY_HEIGHT 一致。 */
 const BODY_HEIGHT = 1.75
