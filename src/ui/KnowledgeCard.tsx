@@ -26,16 +26,7 @@ export function KnowledgeCard({ selectedId, onClose }: KnowledgeCardProps) {
       </section>
 
       <section className="knowledge-card__section">
-        <h3>🧪 分泌什么？</h3>
-        <ul>
-          {gland.hormones.map((hormone) => (
-            <li key={hormone}>{hormone}</li>
-          ))}
-        </ul>
-      </section>
-
-      <section className="knowledge-card__section">
-        <h3>💡 有什么作用？</h3>
+        <h3>💡 有什么功能？</h3>
         <ul>
           {gland.functions.map((fn) => (
             <li key={fn}>{fn}</li>

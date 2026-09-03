@@ -76,8 +76,10 @@ export interface Gland {
   readonly focusOffset?: Vec3
   /** 一句话位置描述。 */
   readonly location: string
-  readonly hormones: readonly string[]
-  /** 1–3 条，初中生水平（Design.md §16）。 */
+  /**
+   * "有什么功能" 的正文，1–3 条。文字照初中生物教材给，不自行改写
+   * （Design.md §16）—— 这张卡是拿来对着课本背的，措辞得和课本一致。
+   */
   readonly functions: readonly string[]
   /** 主题色，用于知识卡与选中高亮。 */
   readonly color: string

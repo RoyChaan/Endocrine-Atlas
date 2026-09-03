@@ -38,11 +38,10 @@ describe('腺体数据完整性', () => {
     expect(gland.color).toMatch(/^#[0-9A-Fa-f]{6}$/)
   })
 
-  it.each(GLANDS.map((g) => [g.id, g] as const))('%s 的激素与作用条数合规', (_id, gland) => {
-    expect(gland.hormones.length).toBeGreaterThanOrEqual(1)
+  it.each(GLANDS.map((g) => [g.id, g] as const))('%s 的功能条数合规', (_id, gland) => {
     expect(gland.functions.length).toBeGreaterThanOrEqual(1)
     expect(gland.functions.length).toBeLessThanOrEqual(MAX_FUNCTIONS)
-    for (const text of [...gland.hormones, ...gland.functions]) {
+    for (const text of gland.functions) {
       expect(text.trim()).not.toBe('')
     }
   })

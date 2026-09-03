@@ -8,12 +8,11 @@ import type { Gland } from '../types/gland'
  * 原点在双脚间地面，总高 1.75。数组顺序按解剖高度从上到下排列，
  * tests/data.test.ts 会校验这一顺序。
  *
- * ## 为什么下丘脑与垂体合成了一条
+ * ## 垂体为什么用整个脑的模型
  *
- * 七个模型对七条腺体。大脑那个模型是一份正中矢状切面，下丘脑与垂体
- * 都在切面上，紧挨着、总共不到两厘米 —— 拆成两条就得让同一个模型
- * 出现两次，或者给垂体单配一个几毫米的小球，两种都比合成一条更糟。
- * 合成后两者的名称、激素、作用一条不少，只是共用一张卡。
+ * 垂体只有豌豆大。单给它配一个几毫米的小球，在人体里既认不出来，也说不清
+ * 它长在哪儿。大脑那个模型是一份正中矢状切面，垂体正好在切面上、挂在颅底的
+ * 垂体窝里 —— 连着颅腔一起给，位置才读得出来。
  *
  * ## anchor / size 是怎么定的
  *
@@ -29,16 +28,16 @@ import type { Gland } from '../types/gland'
 export const GLANDS: readonly Gland[] = [
   {
     id: 'pituitary',
-    name: 'Hypothalamus & Pituitary',
-    chineseName: '下丘脑与垂体',
+    name: 'Pituitary',
+    chineseName: '垂体',
     model: {
       url: '/models/brain.glb',
       // 脑的前后径约 17 cm，正是这个模型的最长边。
       size: 0.145,
       // 颅腔中心略偏后上。
       //
-      // 这个模型是**右半个脑**的正中矢状切面 —— 正是要的：下丘脑与垂体都长在
-      // 切面上，看得见；镜像成整个脑反而会把它们夹在中间，永远看不到。
+      // 这个模型是**右半个脑**的正中矢状切面 —— 正是要的：垂体就长在切面上，
+      // 看得见；镜像成整个脑反而会把它夹在中间，永远看不到。
       //
       // x 取 −0.030 = 压扁后模型 x 向的半宽，于是切面正好落在中线 x = 0 上，
       // 脑组织整个在 x ∈ [−0.060, 0]，也就是人偶的**右半**颅腔。
@@ -53,15 +52,10 @@ export const GLANDS: readonly Gland[] = [
       lateralScale: 0.72,
     },
     display: 'body',
-    // 下丘脑与垂体在脑的偏下前方，比整个脑的包围盒中心低约 2 cm。
+    // 垂体在颅底的垂体窝里，比整个脑的包围盒中心低约 2 cm、略偏前。
     focusOffset: [0.02, -0.02, 0.005],
-    location: '大脑底部正中，垂体像豌豆一样悬在下丘脑下方',
-    hormones: ['释放激素（下丘脑）', '生长激素（垂体）'],
-    functions: [
-      '下丘脑是内分泌系统的“总开关”，指挥垂体工作',
-      '垂体分泌生长激素，促进身体长高、长壮',
-      '下丘脑还调节体温、饥饿和睡眠',
-    ],
+    location: '位于颅底垂体窝内。成人的垂体大小如豌豆。',
+    functions: ['它不仅分泌生长激素，促进生长发育，还分泌多种其他激素，调节其他内分泌腺的活动。'],
     color: '#9B8CF0',
     focusDistance: 0.34,
   },
@@ -79,9 +73,8 @@ export const GLANDS: readonly Gland[] = [
       anchor: [0, 1.457, -0.006],
     },
     display: 'body',
-    location: '颈部前方，气管两侧',
-    hormones: ['甲状腺激素'],
-    functions: ['调节身体的新陈代谢', '参与生长发育', '影响神经系统的兴奋性'],
+    location: '人体最大的内分泌腺，位于颈前部、气管的两侧。',
+    functions: ['甲状腺分泌的甲状腺激素，能促进人体的生长发育和细胞代谢，提高神经系统的兴奋性。'],
     color: '#F0968C',
     focusDistance: 0.24,
   },
@@ -99,16 +92,15 @@ export const GLANDS: readonly Gland[] = [
       anchor: [0, 1.365, 0.03],
     },
     display: 'body',
-    location: '胸骨后方，心脏的前上方',
-    hormones: ['胸腺激素'],
-    functions: ['培育 T 淋巴细胞，是免疫系统的“训练营”', '青春期后逐渐萎缩，被脂肪替代'],
+    location: '位于胸骨下方。',
+    functions: ['能分泌促进淋巴细胞发育的激素，帮助人体抵抗疾病。'],
     color: '#C6A2E0',
     focusDistance: 0.26,
   },
   {
     id: 'pancreas',
-    name: 'Pancreas',
-    chineseName: '胰腺',
+    name: 'Pancreatic Islets',
+    chineseName: '胰岛',
     model: {
       url: '/models/pancreas.glb',
       // 连着十二指肠 C 形袢，整体横跨约 19 cm。
@@ -122,9 +114,10 @@ export const GLANDS: readonly Gland[] = [
       anchor: [0.01, 1.15, 0.042],
     },
     display: 'body',
-    location: '上腹部，胃的后下方',
-    hormones: ['胰岛素'],
-    functions: ['降低血糖，调节糖类的代谢', '分泌不足会引起糖尿病'],
+    location: '位于胰腺中',
+    functions: [
+      '能分泌胰岛素和胰高血糖素。胰岛素能降低人体的血糖水平，胰高血糖素能升高人体的血糖水平。',
+    ],
     color: '#7FD1A8',
     focusDistance: 0.3,
   },
@@ -150,9 +143,8 @@ export const GLANDS: readonly Gland[] = [
     // 腺体在肾的**上极**，比整个模型的包围盒中心高约 5 cm。
     // 腺体是模型顶端那对小帽，比包围盒中心高约 6 cm。
     focusOffset: [0, 0.06, 0.01],
-    location: '左右两个肾脏的上方，各一个',
-    hormones: ['肾上腺素'],
-    functions: ['紧张或危险时让心跳加快、呼吸加深', '帮助身体应对压力'],
+    location: '位于肾的上方',
+    functions: ['分泌的肾上腺素能促使心跳加快，增强心肌收缩力。'],
     color: '#F0C46A',
     focusDistance: 0.3,
   },
@@ -173,8 +165,7 @@ export const GLANDS: readonly Gland[] = [
     },
     display: 'body',
     location: '女性下腹部盆腔内，左右各一',
-    hormones: ['雌性激素'],
-    functions: ['产生卵细胞', '促进女性生殖器官的发育', '激发并维持女性的第二性征'],
+    functions: ['分泌雌激素，雌激素能促进女性生殖器官的发育，激发并维持女性第二性征'],
     color: '#E68FC0',
     focusDistance: 0.24,
   },
@@ -191,8 +182,7 @@ export const GLANDS: readonly Gland[] = [
     },
     display: 'detail',
     location: '男性阴囊内，左右各一',
-    hormones: ['雄性激素'],
-    functions: ['产生精子', '促进男性生殖器官的发育', '激发并维持男性的第二性征'],
+    functions: ['分泌雄激素，雄激素能促进男性生殖器官的发育，激发并维持男性第二性征'],
     color: '#6FC3D9',
     focusDistance: 0.24,
   },

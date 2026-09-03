@@ -57,9 +57,6 @@ describe('App 端到端冒烟', () => {
       expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent(gland.chineseName)
       expect(card).toHaveTextContent(gland.name)
       expect(card).toHaveTextContent(gland.location)
-      for (const hormone of gland.hormones) {
-        expect(card).toHaveTextContent(hormone)
-      }
       for (const fn of gland.functions) {
         expect(card).toHaveTextContent(fn)
       }
@@ -127,9 +124,6 @@ describe('App 端到端冒烟', () => {
     const card = screen.getByRole('complementary')
     expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent(testis.chineseName)
     expect(card).toHaveTextContent(testis.location)
-    for (const hormone of testis.hormones) {
-      expect(card).toHaveTextContent(hormone)
-    }
     for (const fn of testis.functions) {
       expect(card).toHaveTextContent(fn)
     }
