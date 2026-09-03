@@ -2,6 +2,9 @@
 //
 //   node tools/shoot.mjs <out.png> [动作 ...]
 //
+// 默认连 http://localhost:5173（`npm run dev` 的端口）。
+// 用 --port 起了别的端口就设 PORT 环境变量。
+//
 // 动作有两种：
 //   "文本片段"    —— 按可见文本找按钮并点击（返回人体、单独查看…）
 //   "gland:<id>"  —— 点 3D 画布上那个腺体。位置由概览机位把它的 anchor
@@ -22,7 +25,8 @@ page.on('console', (m) => {
   const t = m.text()
   if (m.type() === 'error' && !t.includes('favicon')) console.error('CONSOLE', t)
 })
-await page.goto('http://localhost:5177/', { waitUntil: 'networkidle0', timeout: 180000 })
+const PORT = process.env.PORT ?? '5173'
+await page.goto(`http://localhost:${PORT}/`, { waitUntil: 'networkidle0', timeout: 180000 })
 const settle = (ms = 4000) => new Promise((r) => setTimeout(r, ms))
 await settle(6000)
 

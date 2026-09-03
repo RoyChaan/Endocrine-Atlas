@@ -7,7 +7,16 @@
 需要 Node.js ≥ 20。
 
     npm install
-    npm run dev
+    npm run dev        # http://localhost:5173
+
+**没有后端，不用起第二个服务。** 这是一个纯静态前端：依赖只有 react /
+react-dom / three，没有任何服务端代码，也没有数据库、API 或环境变量。
+7 个器官模型加 1 个人体模型都是 `public/models/` 下的静态 .glb，
+Vite 当普通静态资源发出去，`npm run build` 之后 `dist/` 可以直接扔到任何
+静态托管上（GitHub Pages / Netlify / Vercel 都行）。
+
+`scripts/` 下那几个是**离线**的模型管线，只在需要重新生成 .glb 时手动跑，
+跟运行应用无关 —— 产物已经在仓库里了，克隆下来直接 `npm run dev` 就能看。
 
 ## 命令
 
