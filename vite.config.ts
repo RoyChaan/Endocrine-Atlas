@@ -10,6 +10,15 @@ const base = process.env.VITE_BASE ?? '/'
 export default defineConfig({
   base,
   plugins: [react()],
+  build: {
+    /*
+     * 压缩器默认会把 `@media (max-width: 768px)` 改写成 Level 4 的区间语法
+     * `@media (width <= 768px)` —— 省几个字节，但 iOS 16.4（2023-03）以前的
+     * Safari 不认，整条规则连同里面的手机版式一起被丢掉。这个站要投到讲台的
+     * 手机上，压不起这个赌注，把 CSS 目标锁回旧 Safari。
+     */
+    cssTarget: 'safari14',
+  },
   test: {
     globals: true,
     environment: 'jsdom',
