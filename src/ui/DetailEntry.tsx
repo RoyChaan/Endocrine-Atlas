@@ -33,7 +33,7 @@ export function DetailEntry({ gland, onOpen }: DetailEntryProps) {
           <span className="detail-entry__en">{gland.name}</span>
         </span>
         <span className="detail-entry__cue" aria-hidden="true">
-          单独查看 →
+          <span className="detail-entry__cue-text">单独查看 </span>→
         </span>
       </span>
     </button>

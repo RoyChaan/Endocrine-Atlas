@@ -84,10 +84,13 @@ body {
 
 /* 右下角的详情入口卡片（睾丸）。整块是一个 <button>。 */
 .detail-entry {
+  /* 手机上要整体缩小（见文件末尾的小视口规则），尺寸集中在这两个变量里。 */
+  --detail-entry-width: 172px;
+  --detail-entry-scene: 112px;
   position: absolute;
   right: 1rem;
   bottom: 1rem;
-  width: 172px;
+  width: var(--detail-entry-width);
   padding: 0;
   display: flex;
   flex-direction: column;
@@ -119,7 +122,7 @@ body {
 
 .detail-entry__scene {
   display: block;
-  height: 112px;
+  height: var(--detail-entry-scene);
 }
 
 .detail-entry__label {
@@ -307,5 +310,42 @@ body {
   .app__panel {
     border-left: none;
     border-top: 1px solid #263039;
+  }
+}
+
+/*
+ * 小视口：睾丸入口卡缩到原来的一半左右。
+ *
+ * 桌面上 172x170 的卡片只占 3D 区的百分之几，手机上却是 19% —— 竖屏时正好压在
+ * 胰腺、肾上腺、卵巢那一片上，人体的下半身全被挡住。
+ *
+ * 两个断点都要：竖屏靠 max-width 命中，而横屏投屏（如 844x390）宽度过了 768，
+ * 得靠 max-height 命中 —— 那种姿态下高度才是紧的那一维。
+ */
+@media (max-width: 768px), (max-height: 520px) {
+  .detail-entry {
+    --detail-entry-width: 100px;
+    --detail-entry-scene: 56px;
+    right: 0.6rem;
+    bottom: 0.6rem;
+    border-radius: 8px;
+  }
+
+  .detail-entry__label {
+    padding: 0.3rem 0.45rem 0.35rem;
+  }
+
+  .detail-entry__cn {
+    font-size: 0.8rem;
+  }
+
+  /* 英文名与"单独查看"四个字让位，只留箭头示意可点。 */
+  .detail-entry__en,
+  .detail-entry__cue-text {
+    display: none;
+  }
+
+  .detail-entry__cue {
+    font-size: 0.9rem;
   }
 }
