@@ -3,7 +3,6 @@ export type Vec3 = readonly [number, number, number]
 export type GlandId =
   | 'pituitary'
   | 'thyroid'
-  | 'thymus'
   | 'adrenal'
   | 'pancreas'
   | 'ovary'
@@ -42,7 +41,7 @@ export interface OrganModel {
   /**
    * 绕 +Y 轴的偏航（弧度），在缩放与落位之前施加。
    *
-   * 七个模型里只有大脑需要：生成器把它的前后轴放在了 X 上（前额朝 −X），
+   * 六个模型里只有大脑需要：生成器把它的前后轴放在了 X 上（前额朝 −X），
    * 而人体坐标系里腹侧是 +Z。其余六个导出时就是 +Y 朝上、+Z 朝腹侧。
    */
   readonly yaw?: number
@@ -71,7 +70,7 @@ export interface Gland {
    * 相机注视点相对 `model.anchor` 的偏移。
    *
    * 有些模型里"腺体本身"不在包围盒中心：肾上腺只是那对肾脏顶端的小帽子，
-   * 胸腺的主体偏上。聚焦要对准腺体，不是对准整个模型。
+   * 垂体挂在整个脑的底部。聚焦要对准腺体，不是对准整个模型。
    */
   readonly focusOffset?: Vec3
   /** 一句话位置描述。 */

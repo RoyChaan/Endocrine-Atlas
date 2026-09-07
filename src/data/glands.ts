@@ -79,25 +79,6 @@ export const GLANDS: readonly Gland[] = [
     focusDistance: 0.24,
   },
   {
-    id: 'thymus',
-    name: 'Thymus',
-    chineseName: '胸腺',
-    model: {
-      url: '/models/thymus.glb',
-      // 上下长约 7.5 cm，是这个模型的最长边。青春期前的胸腺比成年后大得多，
-      // 这套图给的是发育期的尺寸。
-      size: 0.075,
-      // 上纵隔，胸骨柄正后方。实测这一层的腹侧面在 z ≈ +0.071，
-      // 胸骨紧贴其内，胸腺再往后约 3 cm。
-      anchor: [0, 1.365, 0.03],
-    },
-    display: 'body',
-    location: '位于胸骨下方。',
-    functions: ['能分泌促进淋巴细胞发育的激素，帮助人体抵抗疾病。'],
-    color: '#C6A2E0',
-    focusDistance: 0.26,
-  },
-  {
     id: 'pancreas',
     name: 'Pancreatic Islets',
     chineseName: '胰岛',

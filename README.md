@@ -11,7 +11,7 @@
 
 **没有后端，不用起第二个服务。** 这是一个纯静态前端：依赖只有 react /
 react-dom / three，没有任何服务端代码，也没有数据库、API 或环境变量。
-7 个器官模型加 1 个人体模型都是 `public/models/` 下的静态 .glb，
+6 个器官模型加 1 个人体模型都是 `public/models/` 下的静态 .glb，
 Vite 当普通静态资源发出去，`npm run build` 之后 `dist/` 可以直接扔到任何
 静态托管上（GitHub Pages / Netlify / Vercel 都行）。
 
@@ -56,7 +56,7 @@ OrbitControls。它不含任何数学。
 
 ## 腺体模型：怎么从生成器的输出摆进人体
 
-七个器官模型来自第三方 3D 生成器（Tripo），原始导出每个约 200 万面 / 57 MB，
+六个器官模型来自第三方 3D 生成器（Tripo），原始导出每个约 200 万面 / 57 MB，
 `scripts/build-organs.sh` 把它们压到每个约 4.5 万面 / 1.5 MB 放进 `public/models/`。
 
 生成器的导出有一个共同约定：**被归一化过** —— 最长边约 1、底面贴 `y = 0`、
@@ -199,7 +199,7 @@ type ViewState =
 | 层 | 是什么 | 可点 | 来源 |
 |---|---|---|---|
 | **人体** | 半透明女性虚影，菲涅尔玻璃壳 | 否 | MakeHuman CC0 基础网格 + 女性形变表 + 最小罩杯（`scripts/build-body.mjs`） |
-| **腺体** | 7 个写实器官 | 是 | 第三方生成器（Tripo）导出的 GLB（`scripts/build-organs.sh`） |
+| **腺体** | 6 个写实器官 | 是 | 第三方生成器（Tripo）导出的 GLB（`scripts/build-organs.sh`） |
 
 上一版还有第三层"上下文器官"（另画一套肾 / 子宫 / 脑给腺体作位置参照）。
 现在不需要了：生成器给的模型本身就带着这些解剖背景 —— 肾上腺连着肾、
@@ -279,7 +279,7 @@ z 坐标集体前移，甲状腺浮到了喉咙外面。改成按**躯干**对�
 
 ### 腺体（build-organs.sh）
 
-7 个 Tripo 导出，每个约 200 万面 / 57 MB，压到约 4.5 万面 / 1.5 MB。
+6 个 Tripo 导出，每个约 200 万面 / 57 MB，压到约 4.5 万面 / 1.5 MB。
 `weld → simplify（循环）→ prune → quantize`。两处不显然：
 
 - **要循环调用 simplify**。meshoptimizer 的简化器每次调用只能折叠到某个
@@ -309,7 +309,7 @@ z 坐标集体前移，甲状腺浮到了喉咙外面。改成按**躯干**对�
 | 素材 | 来源 | 许可 |
 |---|---|---|
 | `public/models/body.glb` | [MakeHuman](https://github.com/makehumancommunity/makehuman) 基础网格 `base.obj` + `macrodetails` 形变表 | **CC0**（2020-09 由版权方 Data Collection AB 明确释出，声明见 `base.obj` 头部），无需署名 |
-| `public/models/{brain,thyroid,thymus,adrenal,pancreas,ovary,testis}.glb` | 第三方 3D 生成器（Tripo）按项目需求生成 | 由生成方账号持有 |
+| `public/models/{brain,thyroid,adrenal,pancreas,ovary,testis}.glb` | 第三方 3D 生成器（Tripo）按项目需求生成 | 由生成方账号持有 |
 
 ## 文档
 

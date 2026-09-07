@@ -49,7 +49,7 @@ export function OrganModel({ gland, isSelected, hasSelection, onSelect }: OrganM
   //
   // 拆成两个的话，StrictMode 下渲染函数会跑两遍：第二遍的 placeOrgan 把克隆体
   // 从第一遍建的 group 里摘走挂到自己的 group 上，而 React 保留的是第一遍的
-  // 记忆值 —— 于是画面上挂着一个空 group，七个器官全部消失，且不报任何错。
+  // 记忆值 —— 于是画面上挂着一个空 group，六个器官全部消失，且不报任何错。
   // 合成一个之后，每次调用连克隆带 group 都是自己新建的，互不相干。
   const placed = useMemo(() => {
     const cloned = scene.clone(true)

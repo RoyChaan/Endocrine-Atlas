@@ -58,7 +58,6 @@ convert() {
 
 convert "brain+3d+model.glb"                    brain
 convert "anatomical+thyroid+model.glb"          thyroid
-convert "Thymus+3d+model.glb"                   thymus
 convert "kidneys+vascular+system+3d+model.glb"  adrenal
 convert "pancreas+3d+model.glb"                 pancreas
 convert "uterus+3d+model.glb"                   ovary

@@ -19,7 +19,6 @@ const DIR = path.join(ROOT, 'public', 'models')
 const PLACEMENT = {
   brain: { size: 0.145, anchor: [-0.03, 1.662, -0.012], yaw: true, lateral: 0.72 },
   thyroid: { size: 0.05, anchor: [0, 1.457, -0.006] },
-  thymus: { size: 0.075, anchor: [0, 1.365, 0.03] },
   pancreas: { size: 0.19, anchor: [0.01, 1.15, 0.042] },
   adrenal: { size: 0.16, anchor: [0, 1.09, -0.026] },
   ovary: { size: 0.135, anchor: [0, 0.94, -0.018] },

@@ -99,7 +99,7 @@ describe('computeTargetPose', () => {
     expect(computeTargetPose(gland, 0).target).toEqual(focusPoint(gland))
   })
 
-  it('对全部 7 个腺体，相机距离不小于阈值（防贴脸）', () => {
+  it('对全部 6 个腺体，相机距离不小于阈值（防贴脸）', () => {
     for (const gland of allGlands()) {
       for (const azimuth of [0, 0.7, Math.PI / 2, Math.PI, -2.3]) {
         const pose = computeTargetPose(gland, azimuth)

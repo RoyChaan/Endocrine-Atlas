@@ -13,7 +13,6 @@ import type { GlandId } from '../src/types/gland'
 const EXPECTED_IDS: readonly GlandId[] = [
   'pituitary',
   'thyroid',
-  'thymus',
   'adrenal',
   'pancreas',
   'ovary',
@@ -21,8 +20,8 @@ const EXPECTED_IDS: readonly GlandId[] = [
 ]
 
 describe('腺体数据完整性', () => {
-  it('恰好 7 个腺体，id 集合与 GlandId 全集一致', () => {
-    expect(GLANDS).toHaveLength(7)
+  it('恰好 6 个腺体，id 集合与 GlandId 全集一致', () => {
+    expect(GLANDS).toHaveLength(6)
     expect(GLANDS.map((g) => g.id).sort()).toEqual([...EXPECTED_IDS].sort())
   })
 
@@ -82,10 +81,10 @@ describe('模型落位', () => {
     }
   })
 
-  it('甲状腺在颈部：高于胸腺，低于颅腔', () => {
+  it('甲状腺在颈部：低于颅腔，高于腹腔器官', () => {
     const y = (id: GlandId) => glandById(id).model.anchor[1]
     expect(y('thyroid')).toBeLessThan(y('pituitary'))
-    expect(y('thyroid')).toBeGreaterThan(y('thymus'))
+    expect(y('thyroid')).toBeGreaterThan(y('pancreas'))
   })
 
   it('肾与胰腺在前后方向上错开，肾在后', () => {
@@ -145,7 +144,7 @@ describe('腺体的展示位置', () => {
 
 describe('glandRegistry', () => {
   it('allGlands 返回全部 7 条', () => {
-    expect(allGlands()).toHaveLength(7)
+    expect(allGlands()).toHaveLength(6)
   })
 
   it('glandById 命中', () => {

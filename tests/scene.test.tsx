@@ -81,8 +81,8 @@ describe('GlandLayer 场景图', () => {
     const renderer = await ReactThreeTestRenderer.create(
       <GlandLayer selectedId={null} onSelect={() => {}} />,
     )
-    // 垂体（脑）+ 甲状腺 + 胸腺 + 胰岛（胰腺）+ 肾上腺（肾）+ 卵巢（子宫）= 6
-    expect(bodyGlands()).toHaveLength(6)
+    // 垂体（脑）+ 甲状腺 + 胰岛（胰腺）+ 肾上腺（肾）+ 卵巢（子宫）= 5
+    expect(bodyGlands()).toHaveLength(5)
     for (const gland of bodyGlands()) {
       expect(
         renderer.scene.findAll((node) => node.props.name === organName(gland.id)),
