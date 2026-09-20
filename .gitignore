@@ -5,6 +5,7 @@ coverage/
 *.local
 
 .vite/
+.wrangler/
 .DS_Store
 Thumbs.db
 
@@ -28,6 +29,7 @@ pnpm-debug.log*
 # 产物 public/models/body.glb 入库，源文件不入。
 vendor/
 
-# 第三方 3D 生成器导出的高模，每个 ~57 MB。
-# 它们是 scripts/build-organs.sh 的输入，减面后的产物在 public/models/ 下入库。
-Organ/新建文件夹/
+# 建模素材：第三方生成器导出的高模（每个 ~57 MB）与来源不明的解剖参考图。
+# 前者是 scripts/build-organs.sh 的输入，减面后的产物在 public/models/ 下入库。
+Organ/
+/a8a2c85694a42042a6f1ff05ab5744bd.jpg

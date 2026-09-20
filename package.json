@@ -2,6 +2,16 @@
   "name": "endocrine-atlas",
   "private": true,
   "version": "0.1.0",
+  "description": "面向初中生的内分泌腺解剖交互可视化：点腺体、相机聚焦、读知识卡。",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/RoyChaan/Endocrine-Atlas.git"
+  },
+  "homepage": "https://endocrine-atlas.pages.dev",
+  "bugs": {
+    "url": "https://github.com/RoyChaan/Endocrine-Atlas/issues"
+  },
   "type": "module",
   "engines": {
     "node": ">=20"
